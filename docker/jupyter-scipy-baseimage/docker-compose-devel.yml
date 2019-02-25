@@ -1,0 +1,17 @@
+version: '3.3'
+services:
+  jupyter:
+    build: ./dockerfile
+    image: krz/jupyter:latest
+    container_name: jupyter_krzysztof
+    restart: unless-stopped
+    environment:
+        - PYTHONPATH=/home/jovyan/helpers
+        #- JUPYTER_ENABLE_LAB=yes
+    ports:
+      - "8888:8888"
+    #command: >
+      #start-notebook.sh
+        #--NotebookApp.password='sha1:e8a94ff36ffb:26005c833925ae060425126eecf1e999ed8b4b6e' 
+    volumes:
+      - ../../:/home/jovyan

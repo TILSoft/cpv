@@ -1,0 +1,10 @@
+**/credentials.*
+.*
+!.gitignore
+*.pyc
+*.pyo
+tempCodeRunner*
+/testdata/*
+**/instantclient_11_2/
+**/Untitled*
+**/__pycache__/
