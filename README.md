@@ -1,2 +1,2 @@
 # cpv
-See docs folder
+See doc folder
