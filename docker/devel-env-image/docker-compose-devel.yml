@@ -6,7 +6,7 @@ services:
     container_name: jupyter_krzysztof
     restart: unless-stopped
     environment:
-        - PYTHONPATH=/home/jovyan/helpers
+        - PYTHONPATH=/home/jovyan/databases
         #- JUPYTER_ENABLE_LAB=yes
     ports:
       - "8888:8888"
