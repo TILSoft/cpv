@@ -1,8 +1,5 @@
 # %%
 import pandas as pd
-# %%
-df_input = pd.read_csv("input/parameters.csv", sep=',')
-df_input.head()
 
 # %%
 df_params_prd = pd.read_pickle("testdata/df_params_prd_pkl.zip")
