@@ -14,7 +14,8 @@
 			"instantclient",
 			"items",
 			"lims",
-			"pyodbc"
+			"pyodbc",
+			"xlsx"
 		]	
 	},
 
