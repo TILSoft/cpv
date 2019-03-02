@@ -1,6 +1,7 @@
 **/credentials.*
 ~$*
 .*
+/venv/*
 !.gitignore
 !.pylintrc
 *.pyc

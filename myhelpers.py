@@ -11,10 +11,10 @@ def get_params_list(column):
     return params[:-1]
 
 
-def trim_all_columns(df):
+def trim_all_columns(dataframe):
     """
     Trim whitespace from ends of each value across all series in dataframe
     """
     def trim(x):
         return x.strip() if type(x) is str else x
-    return df.applymap(trim)
+    return dataframe.applymap(trim)

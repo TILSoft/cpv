@@ -7,10 +7,14 @@
     instantclient-basic-linux.x64-11.2.0.4.0.zip
     instantclient-sqlplus-linux.x64-11.2.0.4.0.zip
     instantclient-sdk-linux.x64-11.2.0.4.0.zip
-    host package unixODBC is needed for "pip install pyodbc"
+    
+    host package unixodbc-dev is needed for "pipenv install pyodbc"
 
 ## MySQL
     it needs libmysqlclient-dev on the host for sqlalchemy to work
+
+## Jupyter
+    due to bug https://github.com/jupyter/notebook/issues/4399, install tornado==5.1.1
 
 ## Parameters
 
