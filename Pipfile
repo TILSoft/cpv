@@ -1,0 +1,22 @@
+[[source]]
+url = "https://pypi.python.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+pandas = "*"
+cx-Oracle = "*"
+SQLAlchemy = "*"
+numpy = "*"
+mysqlclient = "*"
+
+[dev-packages]
+jupyter = "*"
+xlrd = "*"
+flake8 = "*"
+pylint = "*"
+jupyter-core = "*"
+jupyter-tools = "*"
+
+[requires]
+python_version = "3.7"

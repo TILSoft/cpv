@@ -2,6 +2,7 @@
 ~$*
 .*
 !.gitignore
+!.pylintrc
 *.pyc
 *.pyo
 tempCodeRunner*

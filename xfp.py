@@ -1,23 +1,25 @@
+"""Select queries on the XFP database"""
 # %%
+import os
 import pandas as pd
-
 import cx_Oracle
-import credentials
-
-
 # %%
-class xfp:
-    __DB_SID = credentials.XFP_DB_SID
-    __DB_IP = credentials.XFP_DB_IP
-    __DB_PORT = credentials.XFP_DB_PORT
-    __USERNAME = credentials.XFP_USERNAME
-    __PASSWORD = credentials.XFP_PASSWORD
+
+
+class Xfp:
+    """Select queries on the XFP database"""
+    __DB_SID = os.environ['XFP_DB_SID']
+    __DB_IP = os.environ['XFP_DB_IP']
+    __DB_PORT = os.environ['XFP_DB_PORT']
+    __USERNAME = os.environ['XFP_USERNAME']
+    __PASSWORD = os.environ['XFP_PASSWORD']
 
     @staticmethod
     def run_sql(sql):
-        connectionString = cx_Oracle.makedsn(
-            xfp.__DB_IP, xfp.__DB_PORT, xfp.__DB_SID)
+        """Run select and return dataframe"""
+        connection_string = cx_Oracle.makedsn(
+            Xfp.__DB_IP, Xfp.__DB_PORT, Xfp.__DB_SID)
         connection = cx_Oracle.connect(
-            xfp.__USERNAME, xfp.__PASSWORD, connectionString)
+            Xfp.__USERNAME, Xfp.__PASSWORD, connection_string)
         dataframe = pd.read_sql(sql, connection)
         return dataframe

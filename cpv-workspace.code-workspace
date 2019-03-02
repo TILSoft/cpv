@@ -16,7 +16,8 @@
 			"lims",
 			"pyodbc",
 			"xlsx"
-		]	
+		],
+		"python.pythonPath": "/home/krzysiek/.local/share/virtualenvs/cpv-KXXMq--Z/bin/python"
 	},
 
 }

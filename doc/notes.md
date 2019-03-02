@@ -9,6 +9,9 @@
     instantclient-sdk-linux.x64-11.2.0.4.0.zip
     host package unixODBC is needed for "pip install pyodbc"
 
+## MySQL
+    it needs libmysqlclient-dev on the host for sqlalchemy to work
+
 ## Parameters
 
 - Every parameter must be in the params_main even if it is in other files
