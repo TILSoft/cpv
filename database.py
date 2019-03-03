@@ -26,7 +26,6 @@ class DataBase:
         with connection.begin() as transaction:
             try:
                 for row in dataframe.itertuples():
-                    # print(statement.format(emi_master=row.emi_master))
                     connection.execute(statement, **row._asdict())
             except Exception as e:
                 print(e)
