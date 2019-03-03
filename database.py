@@ -30,4 +30,3 @@ class DataBase:
             except Exception as e:
                 print(e)
                 transaction.rollback()
-                #raise
