@@ -38,14 +38,58 @@ class DataBase:
                 transaction.rollback()
 
     @classmethod
-    def xfp_run_sql(cls, sql):
+    def select(cls, query):
+        """Return dataframe from SQL"""
+
+        engine = create_engine('mysql://{}:{}@{}/{}'.format(
+            cls.__USERNAME, cls.__PASSWORD, cls.__HOST, cls.__DB))
+
+        connection = engine.connect()
+        with connection.begin() as transaction:
+            try:
+                dataframe = pd.read_sql(query, connection)
+            except Exception as e:
+                print(e)
+                transaction.rollback()
+        return dataframe
+
+    @classmethod
+    def get_param_list_main(cls):
+        """Get the main parameter table"""
+
+        query = "select * from cpv.params_main"
+        return cls.select(query)
+
+    @classmethod
+    def get_param_list_taggers(cls):
+        """Get the taggers parameter table"""
+
+        query = "select * from cpv.params_taggers"
+        return cls.select(query)
+
+    @classmethod
+    def get_param_list_agg(cls):
+        """Get the aggregate parameter table"""
+
+        query = "select * from cpv.params_aggregate"
+        return cls.select(query)
+
+    @classmethod
+    def xfp_run_sql(cls, query):
         """Run select and return dataframe"""
 
-        connection_string = cx_Oracle.makedsn(
-            cls.__DB_XFP_IP, cls.__DB_XFP_PORT, cls.__DB_XFP_SID)
-        connection = cx_Oracle.connect(
-            cls.__USERNAME_XFP, cls.__PASSWORD_XFP, connection_string)
+        try:
+            connection_string = cx_Oracle.makedsn(cls.__DB_XFP_IP,
+                                                  cls.__DB_XFP_PORT,
+                                                  cls.__DB_XFP_SID)
+            connection = cx_Oracle.connect(cls.__USERNAME_XFP,
+                                           cls.__PASSWORD_XFP,
+                                           connection_string)
+            dataframe = pd.read_sql(query, connection)
+        except Exception as e:
+            print(e)
+            raise
+        finally:
+            connection.close()
 
-        dataframe = pd.read_sql(sql, connection)
-        connection.close()
         return dataframe
