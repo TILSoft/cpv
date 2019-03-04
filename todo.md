@@ -19,19 +19,20 @@
   - [ ] df with all finished or intermediate materials descriptions
 
 - Parameter special cases
-  - [ ] get missing parameters from APR queries
-  - [ ] have an extra column marking parameters for agg functions
-  - [ ] agg column can have more than 1 entry eg "min,avg"
+  - [x] get missing parameters from APR queries
+  - [x] have an extra column marking parameters for agg functions
   - [ ] have a way to process agg parameters separately and then merge results with the rest
 
 - Mysql database
-  - [ ] table with all the parameter names, codes and ?types
+  - [x] table with all the parameter names, codes and ?types
   - [ ] main table with results: (parameter name, po) as PK, input date, value, (unit or type)
   - [ ] table for POs
   - [ ] table for material descriptions
 
 - XFP connection
-  - [ ] have class with a method to execute SQL select and return dataframe
+  - [x] have class with a method to execute SQL select and return dataframe
+  - [ ] extract parameters
+  - [ ] extract work orders
 
 - LIMS data
   - [ ] get sql query from QV

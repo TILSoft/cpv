@@ -8,16 +8,16 @@ from myhelpers import trim_all_columns
 from database import DataBase as db
 
 __DB = os.environ['MYSQL_DB']
-
-
 # %%
+
+
 def main():
     """Main function"""
 
     table = f"{__DB}.params_main"
     statement = text(f"""INSERT INTO {table} VALUES (:emi_master,
                     :parameter, :family, :area, :description,
-                    dataformat) ON DUPLICATE KEY UPDATE
+                    :dataformat) ON DUPLICATE KEY UPDATE
                     family = :family, area = :area,
                     description = :description,
                     dataformat = :dataformat""")

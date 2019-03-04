@@ -20,6 +20,7 @@ tornado = "==5.1.1"
 pylint = "*"
 flake8 = "*"
 yapf = "*"
+rope = "*
 
 [requires]
 python_version = "3.7"
