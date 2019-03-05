@@ -44,27 +44,42 @@ class Xfp:
         return trim_all_columns(df_po)
 
 
-    def get_tasks():
-        pass
-
     @staticmethod
     def get_parameters(params):
         """Get parameters from XFP"""
 
-        sql_params_prd = f"""select picode as PICODE, mancode, batchid,
+        sql_params_prd = f"""select picode as picode, mancode, batchid,
                                 parametercode as parametercode, inputindex,
                                 inputdate, datatype,
-                                numvalue, datevalue, TEXTVALUE
+                                numvalue, datevalue,
+                                dbms_lob.substr(textvalue,4000,1) as textvalue
                                 from ELAN2406PRD.e2s_pidata_man
                                 where parametercode in ({params})
-                                and mancode in ('0220917404', '0220936055','0220865338','0220896217','0220897771', '0220888738')
+                                and inputdate >= '01-MAR-19'
+                                --and mancode in ('0220917404', '0220936055','0220865338','0220896217','0220897771', '0220888738')
+                                --and mancode in ('0220917404')
+                                """
+        sql_params_arch = f"""select picode as picode, mancode, batchid,
+                                parametercode as parametercode, inputindex,
+                                inputdate, datatype,
+                                numvalue, datevalue,
+                                dbms_lob.substr(textvalue,4000,1) as textvalue
+                                from arch2406PRD.e2s_pidata_man
+                                where parametercode in ({params})
+                                and inputdate >= '01-MAR-19'
+                                --and mancode in ('0220917404', '0220936055','0220865338','0220896217','0220897771', '0220888738')
+                                --and mancode in ('0220917404')
                                 """
         df_prd = db.xfp_run_sql(sql_params_prd)
-        # df_arch = db.xfp_run_sql(sql_po_arch)
+        df_arch = db.xfp_run_sql(sql_params_arch)
 
-        # df_params = pd.concat([df_prd,
-        #                   df_arch],
-        #                   ignore_index=True,
-        #                   sort=False
-        #                   ).drop_duplicates().reset_index(drop=True)
-        return trim_all_columns(df_prd)
+        df_params = pd.concat([df_prd,
+                              df_arch],
+                              ignore_index=True,
+                              sort=False
+                              ).drop_duplicates().reset_index(drop=True)
+        return trim_all_columns(df_params)
+
+
+    def get_tasks():
+        pass

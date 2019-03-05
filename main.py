@@ -6,11 +6,11 @@ from myhelpers import format_params_list
 from timeit import default_timer as timer
 
 # %%
-start = timer()
-df_orders = xfp.get_orders()
-df_orders.head()
-end = timer()
-print("df_orders duration = " + str(end - start) + " sec")
+# start = timer()
+# df_orders = xfp.get_orders()
+# df_orders.head()
+# end = timer()
+# print("df_orders duration = " + str((end - start) / 60) + " min")
 
 # %%
 df_param_list_main = db.get_param_list_main()
@@ -30,4 +30,4 @@ format_param_list = format_params_list(df_param_list_column)
 start = timer()
 df_params = xfp.get_parameters(format_param_list)
 end = timer()
-print("df_params duration = " + str(end - start) + " sec")
+print("df_params duration = " + str((end - start) / 60) + " min")

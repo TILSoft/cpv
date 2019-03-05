@@ -6,6 +6,7 @@ from sqlalchemy import create_engine
 import pandas as pd
 import cx_Oracle
 
+
 # %%
 class DataBase:
     """Execute all the queries on the main mysql database"""
@@ -77,7 +78,6 @@ class DataBase:
     @classmethod
     def xfp_run_sql(cls, query):
         """Run select and return dataframe"""
-
         try:
             connection_string = cx_Oracle.makedsn(cls.__DB_XFP_IP,
                                                   cls.__DB_XFP_PORT,
