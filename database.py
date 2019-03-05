@@ -1,4 +1,4 @@
-"""Execute all the quries on the main mysql database"""
+"""Execute all the queries on the main mysql database"""
 
 # %%
 import os

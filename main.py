@@ -1,12 +1,16 @@
 # %%
+import pandas as pd
 from xfp import Xfp as xfp
 from database import DataBase as db
-import pandas as pd
 from myhelpers import format_params_list
+from timeit import default_timer as timer
 
 # %%
+start = timer()
 df_orders = xfp.get_orders()
 df_orders.head()
+end = timer()
+print("df_orders duration = " + str(end - start) + " sec")
 
 # %%
 df_param_list_main = db.get_param_list_main()
@@ -23,4 +27,7 @@ df_param_list_column = pd.concat([
 format_param_list = format_params_list(df_param_list_column)
 
 # %%
-# TODO get xfp parameters
+start = timer()
+df_params = xfp.get_parameters(format_param_list)
+end = timer()
+print("df_params duration = " + str(end - start) + " sec")

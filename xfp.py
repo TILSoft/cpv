@@ -48,5 +48,23 @@ class Xfp:
         pass
 
     @staticmethod
-    def get_parameters():
-        pass
+    def get_parameters(params):
+        """Get parameters from XFP"""
+
+        sql_params_prd = f"""select picode as PICODE, mancode, batchid,
+                                parametercode as parametercode, inputindex,
+                                inputdate, datatype,
+                                numvalue, datevalue, TEXTVALUE
+                                from ELAN2406PRD.e2s_pidata_man
+                                where parametercode in ({params})
+                                and mancode in ('0220917404', '0220936055','0220865338','0220896217','0220897771', '0220888738')
+                                """
+        df_prd = db.xfp_run_sql(sql_params_prd)
+        # df_arch = db.xfp_run_sql(sql_po_arch)
+
+        # df_params = pd.concat([df_prd,
+        #                   df_arch],
+        #                   ignore_index=True,
+        #                   sort=False
+        #                   ).drop_duplicates().reset_index(drop=True)
+        return trim_all_columns(df_prd)

@@ -16,6 +16,7 @@
 			"lims",
 			"myhelpers",
 			"pyodbc",
+			"timeit",
 			"xlsx"
 		],
 		"python.pythonPath": "/home/krzysiek/.local/share/virtualenvs/cpv-yt2s6DkN/bin/python"
