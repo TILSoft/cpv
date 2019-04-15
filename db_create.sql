@@ -10,10 +10,10 @@ FLUSH PRIVILEGES;
 -- if running on docker connect with hostname and port
 -- mysql -h localhost -P 3306 --protocol=tcp -u cpv -p
 
-CREATE TABLE IF NOT EXISTS `cpv`.`dates` (
-  `id` INT NOT NULL AUTO_INCREMENT,
-  `last_extracted` DATETIME NOT NULL,
-  PRIMARY KEY (`id`));
+CREATE TABLE `cpv`.`key_values` (
+  `key` VARCHAR(18) NOT NULL,
+  `value` VARCHAR(45) NULL,
+  PRIMARY KEY (`key`));
 
 
 CREATE TABLE IF NOT EXISTS `cpv`.`params_main` (

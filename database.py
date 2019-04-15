@@ -76,6 +76,38 @@ class DataBase:
         return cls.select(query)
 
     @classmethod
+    def save_last_extraction_time(cls):
+        """Update the last extraction time"""
+
+        engine = create_engine('mysql://{}:{}@{}/{}'.format(
+            cls.__USERNAME, cls.__PASSWORD, cls.__HOST, cls.__DB))
+        statement = """INSERT into cpv.key_values VALUES ('last_extracted', now())
+                            ON DUPLICATE KEY UPDATE value = now();"""
+        connection = engine.connect()
+        with connection.begin() as transaction:
+            try:
+                connection.execute(statement)
+            except Exception as e:
+                print(e)
+                transaction.rollback()
+
+    @classmethod
+    def get_last_extraction_time(cls):
+        """get the last extraction time"""
+        engine = create_engine('mysql://{}:{}@{}/{}'.format(
+                                cls.__USERNAME, cls.__PASSWORD, cls.__HOST, cls.__DB))
+
+        connection = engine.connect()
+        with connection.begin() as transaction:
+            try:
+                result = 
+            except Exception as e:
+                print(e)
+                transaction.rollback()
+        return dataframe
+
+
+    @classmethod
     def xfp_run_sql(cls, query):
         """Run select and return dataframe"""
         try:
