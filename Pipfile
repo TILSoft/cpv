@@ -1,7 +1,7 @@
 [[source]]
-url = "https://pypi.python.org/simple"
-verify_ssl = true
 name = "pypi"
+url = "https://pypi.org/simple"
+verify_ssl = true
 
 [packages]
 pandas = "*"
@@ -9,18 +9,13 @@ sqlalchemy = "*"
 numpy = "*"
 cx-oracle = "*"
 pyodbc = "*"
-tornado = "==5.1.1"
-notebook = "*"
-mysqlclient = "*"
 xlrd = "*"
-
-[dev-packages]
-notebook = "*"
-tornado = "==5.1.1"
-pylint = "*"
-flake8 = "*"
-yapf = "*"
-rope = "*
+mysqlclient = "*"
 
 [requires]
 python_version = "3.7"
+
+[dev-packages]
+flake8 = "*"
+pylint = "*"
+notebook = "*"

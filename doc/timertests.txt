@@ -1,0 +1,5 @@
+all params both dbs - 30min
+3 days of params data both dbs - 6.8min
+3 days of params data prd only -
+3h of params data both dbs - 3.5min
+3h of params data prd only - 1.5sec
