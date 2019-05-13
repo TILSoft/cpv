@@ -48,4 +48,12 @@ CREATE TABLE IF NOT EXISTS `cpv`.`params_aggregate` (
   `dataformat` VARCHAR(12) NULL,
   PRIMARY KEY (`emi_master`, `emi_parent`, `emi_sub`, `parameter`));
 
-
+CREATE TABLE IF NOT EXISTS `cpv`.`params_values` (
+  `PO` VARCHAR(10) NOT NULL,
+  `family` VARCHAR(30) NOT NULL,
+  `area` VARCHAR(12) NOT NULL,
+  `parameter` VARCHAR(30) NOT NULL,
+  `value` VARCHAR(12) NOT NULL,
+  `unit` VARCHAR(4) NULL,
+  `inputdate` DATETIME NOT NULL,
+  PRIMARY KEY (`PO`, `family`, `area`, `parameter`));

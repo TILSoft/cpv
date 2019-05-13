@@ -37,10 +37,10 @@ class Xfp:
         if arch_db:
             df_po_arch = db.xfp_run_sql(sql_po_arch)
             df_po = pd.concat([df_po_prd,
-                          df_po_arch],
-                          ignore_index=True,
-                          sort=False
-                          ).drop_duplicates().reset_index(drop=True)
+                              df_po_arch],
+                              ignore_index=True,
+                              sort=False
+                              ).drop_duplicates().reset_index(drop=True)
         else:
             df_po = df_po_prd.drop_duplicates().reset_index(drop=True)
 

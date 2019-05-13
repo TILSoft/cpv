@@ -6,8 +6,8 @@ from myhelpers import format_params_list
 from timeit import default_timer as timer
 
 USE_ARCH_DB = False
-LAST_EXTRACTION = db.get_last_extraction_time()
-#LAST_EXTRACTION = "2019-04-17 10:00:00"
+#LAST_EXTRACTION = db.get_last_extraction_time()
+LAST_EXTRACTION = "2019-05-13 09:00:00"
 print(LAST_EXTRACTION)
 
 # %%
@@ -25,7 +25,7 @@ df_param_list_column = pd.concat([
 format_param_list = format_params_list(df_param_list_column)
 
 # %%
-
+# extract all parameters
 start = timer()
 df_params = xfp.get_parameters(format_param_list, LAST_EXTRACTION, USE_ARCH_DB)
 end = timer()
@@ -33,8 +33,50 @@ print("df_params duration = " + str((end - start) / 60) + " min")
 newest_inputdate = xfp.get_newest_inputdate(df_params)
 db.save_last_extraction_time(newest_inputdate)
 print(newest_inputdate)
+df_params.head()
+
+# %%
+df_param_list_main.head()
+
+# %%
+# Prep standard parameters
+# Filter to include only required parameters
+df_param_main_values = df_params.loc[df_params["PARAMETERCODE"].isin(df_param_list_main['parameter'])]
+
 
 
 # %%
+df_param_list_main.head()
 
+# %%
+# Get process orders
+start = timer()
+df_orders = xfp.get_orders(USE_ARCH_DB)
+df_orders.head()
+end = timer()
+print("df_orders duration = " + str((end - start) / 60) + " min")
+df_orders.shape
+
+# %%
+# join with po table, mainly to get the master emi to join the param csv file later
+df_param_main_values = pd.merge(df_param_main_values,
+              df_orders,
+              left_on='MANCODE', right_on='PO')
+
+# %%
+# join with parameter list to get family name, needed for saving separate files
+df_param_main_values = pd.merge(df_param_main_values,
+                 df_param_list_main,
+                 left_on=['PARAMETERCODE','EMI_MASTER'],
+                 right_on=['parameter','emi_master'])
+
+# %%
+# Filter out indexes smaller than max input index
+df_param_main_values = df_param_main_values.loc[df_param_main_values.groupby(['MANCODE', 'EMI_MASTER', 'PARAMETERCODE'])["INPUTINDEX"].idxmax()]
+df_param_main_values.head()
+
+# %%
+df_param_main_values.shape
+
+# %%
 

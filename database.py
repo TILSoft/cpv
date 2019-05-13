@@ -117,3 +117,7 @@ class DataBase:
             connection.close()
 
         return dataframe
+
+    @classmethod
+    def save_params_values(cls, dataframe):
+        pass
