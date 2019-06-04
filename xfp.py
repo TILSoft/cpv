@@ -48,8 +48,12 @@ class Xfp:
 
 
     @staticmethod
-    def get_parameters(params, time, arch_db=True):
+    def get_parameters(params, time, redo=False, arch_db=True):
         """Get parameters from XFP"""
+
+        date_txt = f"""and inputdate >= TO_DATE('{time}', 'yyyy-mm-dd hh24:mi:ss')"""
+        if redo:
+            date_txt = ""
 
         sql_params_prd = f"""select picode as picode, mancode, batchid,
                                 parametercode as parametercode, inputindex,
@@ -58,10 +62,11 @@ class Xfp:
                                 dbms_lob.substr(textvalue,4000,1) as textvalue
                                 from ELAN2406PRD.e2s_pidata_man
                                 where parametercode in ({params})
-                                and inputdate >= TO_DATE('{time}', 'yyyy-mm-dd hh24:mi:ss')
                                 --and mancode in ('0220917404', '0220936055','0220865338','0220896217','0220897771', '0220888738')
                                 --and mancode in ('0220917404')
+                                {date_txt}
                                 """
+
         sql_params_arch = f"""select picode as picode, mancode, batchid,
                                 parametercode as parametercode, inputindex,
                                 inputdate, datatype,
@@ -69,9 +74,9 @@ class Xfp:
                                 dbms_lob.substr(textvalue,4000,1) as textvalue
                                 from arch2406PRD.e2s_pidata_man
                                 where parametercode in ({params})
-                                and inputdate >= TO_DATE('{time}', 'yyyy-mm-dd hh24:mi:ss')
                                 --and mancode in ('0220917404', '0220936055','0220865338','0220896217','0220897771', '0220888738')
                                 --and mancode in ('0220917404')
+                                {date_txt}
                                 """
         df_prd = db.xfp_run_sql(sql_params_prd)
 
@@ -84,6 +89,11 @@ class Xfp:
                                   ).drop_duplicates().reset_index(drop=True)
         else:
             df_params = df_prd.drop_duplicates().reset_index(drop=True)
+
+        # check and save an actual value
+        df_params["VALUE"] = df_params["NUMVALUE"]
+        df_params.loc[df_params["DATATYPE"] == 0, "VALUE"] = df_params["TEXTVALUE"]
+        df_params.loc[df_params["DATATYPE"] == 2, "VALUE"] = df_params["DATEVALUE"].dt.strftime('%d-%m-%Y %H:%M:%S')
 
         return trim_all_columns(df_params)
 

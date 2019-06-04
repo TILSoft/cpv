@@ -1,22 +1,28 @@
 # %%
 import pandas as pd
+pd.options.display.max_columns = None
 from xfp import Xfp as xfp
 from database import DataBase as db
 from myhelpers import format_params_list
 from timeit import default_timer as timer
-
-USE_ARCH_DB = False
-#LAST_EXTRACTION = db.get_last_extraction_time()
-LAST_EXTRACTION = "2019-05-13 09:00:00"
-print(LAST_EXTRACTION)
-
+from db_excel_upload import excel_upload
 # %%
-df_param_list_main = db.get_param_list_main()
-df_param_list_taggers = db.get_param_list_taggers()
-df_param_list_agg = db.get_param_list_agg()
+
+#LAST_EXTRACTION = db.get_last_extraction_time()
+LAST_EXTRACTION = "2019-06-04 09:00:00"
+USE_ARCH_DB = False
+#Means reread all params data, purge table and pulll ALL the parameters
+REDO_EVERYTHING = False
+if REDO_EVERYTHING:
+    USE_ARCH_DB = True
+    db.truncate_all()
+    excel_upload()
 
 # %%
 # get list of all parameters to be extracted from XFP formated for SQL
+df_param_list_main = db.get_param_list_main()
+df_param_list_taggers = db.get_param_list_taggers()
+df_param_list_agg = db.get_param_list_agg()
 df_param_list_column = pd.concat([
     df_param_list_main['parameter'],
     df_param_list_taggers['parameter'],
@@ -27,7 +33,7 @@ format_param_list = format_params_list(df_param_list_column)
 # %%
 # extract all parameters
 start = timer()
-df_params = xfp.get_parameters(format_param_list, LAST_EXTRACTION, USE_ARCH_DB)
+df_params = xfp.get_parameters(format_param_list, LAST_EXTRACTION, REDO_EVERYTHING, USE_ARCH_DB)
 end = timer()
 print("df_params duration = " + str((end - start) / 60) + " min")
 newest_inputdate = xfp.get_newest_inputdate(df_params)
@@ -35,18 +41,12 @@ db.save_last_extraction_time(newest_inputdate)
 print(newest_inputdate)
 df_params.head()
 
-# %%
-df_param_list_main.head()
 
 # %%
 # Prep standard parameters
 # Filter to include only required parameters
 df_param_main_values = df_params.loc[df_params["PARAMETERCODE"].isin(df_param_list_main['parameter'])]
 
-
-
-# %%
-df_param_list_main.head()
 
 # %%
 # Get process orders
@@ -75,8 +75,13 @@ df_param_main_values = pd.merge(df_param_main_values,
 df_param_main_values = df_param_main_values.loc[df_param_main_values.groupby(['MANCODE', 'EMI_MASTER', 'PARAMETERCODE'])["INPUTINDEX"].idxmax()]
 df_param_main_values.head()
 
-# %%
-df_param_main_values.shape
 
 # %%
 
+df_param_main_values.head()
+
+
+#%%
+db.update_params_values(df_param_main_values)
+
+# %%

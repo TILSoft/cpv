@@ -11,7 +11,7 @@ __DB = os.environ['MYSQL_DB']
 # %%
 
 
-def main():
+def excel_upload():
     """Main function"""
 
     table = f"{__DB}.params_main"
@@ -52,5 +52,5 @@ def main():
     db.update(statement, df)
 
 
-if __name__ == "__main__":
-    main()
+# if __name__ == "__main__":
+#     main()

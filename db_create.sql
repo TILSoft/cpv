@@ -4,7 +4,7 @@ CREATE DATABASE IF NOT EXISTS cpv;
 
 CREATE USER IF NOT EXISTS `cpv`@`%`;
 ALTER USER `cpv`@`%`IDENTIFIED BY ; --pass in keepass;
-GRANT SELECT, INSERT, UPDATE, DELETE ON cpv.* TO `cpv`@`%`;
+GRANT SELECT, INSERT, UPDATE, DELETE, DROP ON cpv.* TO `cpv`@`%`;
 FLUSH PRIVILEGES;
 
 -- if running on docker connect with hostname and port
@@ -53,7 +53,7 @@ CREATE TABLE IF NOT EXISTS `cpv`.`params_values` (
   `family` VARCHAR(30) NOT NULL,
   `area` VARCHAR(12) NOT NULL,
   `parameter` VARCHAR(30) NOT NULL,
-  `value` VARCHAR(12) NOT NULL,
+  `value` VARCHAR(30) NOT NULL,
   `unit` VARCHAR(4) NULL,
   `inputdate` DATETIME NOT NULL,
   PRIMARY KEY (`PO`, `family`, `area`, `parameter`));

@@ -3,8 +3,10 @@
 # %%
 import os
 from sqlalchemy import create_engine
+from sqlalchemy.sql import text
 import pandas as pd
 import cx_Oracle
+from myhelpers import trim_all_columns
 
 
 # %%
@@ -37,6 +39,21 @@ class DataBase:
             except Exception as e:
                 print(e)
                 transaction.rollback()
+
+    @classmethod
+    def update_params_values(cls, dataframe):
+        """Execute Insert or Update SQL statement on the database"""
+
+        table = f"{cls.__DB}.params_values"
+        statement = text(f"""INSERT INTO {table} VALUES (:MANCODE, :family, :area,
+                    :description, :VALUE, :dataformat, :INPUTDATE)
+                    ON DUPLICATE KEY UPDATE
+                    value = :VALUE,
+                    unit = :dataformat,
+                    inputdate = :INPUTDATE
+                    """)
+        dataframe = trim_all_columns(dataframe)
+        cls.update(statement, dataframe)
 
     @classmethod
     def select(cls, query):
@@ -119,5 +136,19 @@ class DataBase:
         return dataframe
 
     @classmethod
-    def save_params_values(cls, dataframe):
-        pass
+    def truncate_all(cls):
+        engine = create_engine('mysql://{}:{}@{}/{}'.format(
+                cls.__USERNAME, cls.__PASSWORD, cls.__HOST, cls.__DB))
+        statements = [f"TRUNCATE TABLE {cls.__DB}.params_values",
+                    f"TRUNCATE TABLE {cls.__DB}.params_aggregate",
+                    f"TRUNCATE TABLE {cls.__DB}.params_main",
+                    f"TRUNCATE TABLE {cls.__DB}.params_taggers"]
+        connection = engine.connect()
+        with connection.begin() as transaction:
+            try:
+                for statement in statements:
+                    connection.execute(statement)
+            except Exception as e:
+                print(e)
+                transaction.rollback()
+
