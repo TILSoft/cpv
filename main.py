@@ -1,4 +1,5 @@
 # %%
+start1 = timer()
 import pandas as pd
 pd.options.display.max_columns = None
 from xfp import Xfp as xfp
@@ -12,7 +13,7 @@ from db_excel_upload import excel_upload
 LAST_EXTRACTION = "2019-06-04 09:00:00"
 USE_ARCH_DB = False
 #Means reread all params data, purge table and pulll ALL the parameters
-REDO_EVERYTHING = False
+REDO_EVERYTHING = True
 if REDO_EVERYTHING:
     USE_ARCH_DB = True
     db.truncate_all()
@@ -33,29 +34,24 @@ format_param_list = format_params_list(df_param_list_column)
 # %%
 # extract all parameters
 start = timer()
-df_params = xfp.get_parameters(format_param_list, LAST_EXTRACTION, REDO_EVERYTHING, USE_ARCH_DB)
+df_params = xfp.get_parameters(format_param_list, LAST_EXTRACTION,
+                                REDO_EVERYTHING, USE_ARCH_DB)
 end = timer()
 print("df_params duration = " + str((end - start) / 60) + " min")
 newest_inputdate = xfp.get_newest_inputdate(df_params)
 db.save_last_extraction_time(newest_inputdate)
-print(newest_inputdate)
-df_params.head()
-
 
 # %%
-# Prep standard parameters
+# Prep parameters dataframes
 # Filter to include only required parameters
 df_param_main_values = df_params.loc[df_params["PARAMETERCODE"].isin(df_param_list_main['parameter'])]
-
+df_param_taggers = df_params.loc[df_params["PARAMETERCODE"].isin(df_param_list_taggers['parameter'])]
+df_param_agg = df_params.loc[df_params["PARAMETERCODE"].isin(df_param_list_agg['parameter'])]
+del df_params
 
 # %%
 # Get process orders
-start = timer()
 df_orders = xfp.get_orders(USE_ARCH_DB)
-df_orders.head()
-end = timer()
-print("df_orders duration = " + str((end - start) / 60) + " min")
-df_orders.shape
 
 # %%
 # join with po table, mainly to get the master emi to join the param csv file later
@@ -73,7 +69,6 @@ df_param_main_values = pd.merge(df_param_main_values,
 # %%
 # Filter out indexes smaller than max input index
 df_param_main_values = df_param_main_values.loc[df_param_main_values.groupby(['MANCODE', 'EMI_MASTER', 'PARAMETERCODE'])["INPUTINDEX"].idxmax()]
-df_param_main_values.head()
 
 
 # %%
@@ -85,3 +80,5 @@ df_param_main_values.head()
 db.update_params_values(df_param_main_values)
 
 # %%
+end1 = timer()
+print("Execution duration = " + str((end1 - start1) / 60) + " min")

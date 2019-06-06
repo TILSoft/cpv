@@ -90,10 +90,21 @@ class Xfp:
         else:
             df_params = df_prd.drop_duplicates().reset_index(drop=True)
 
+        # the dt.strftime cant handle when the date is too old or too new
+        df_params.drop(df_params.loc[(df_params["DATATYPE"] == 2) & (df_params["DATEVALUE"].astype(str).str.startswith("0"))].index
+               ,inplace=True
+               ,axis=0)
+        df_params.drop(df_params.loc[(df_params["DATATYPE"] == 2) & (df_params["DATEVALUE"].astype(str).str.startswith("28"))].index
+               ,inplace=True
+               ,axis=0)
+
         # check and save an actual value
         df_params["VALUE"] = df_params["NUMVALUE"]
         df_params.loc[df_params["DATATYPE"] == 0, "VALUE"] = df_params["TEXTVALUE"]
         df_params.loc[df_params["DATATYPE"] == 2, "VALUE"] = df_params["DATEVALUE"].dt.strftime('%d-%m-%Y %H:%M:%S')
+
+        # drop Null values
+        df_params.drop(df_params.loc[df_params["VALUE"].isnull()].index, inplace=True, axis=0)
 
         return trim_all_columns(df_params)
 
@@ -105,5 +116,5 @@ class Xfp:
 
 
     @staticmethod
-    def get_tasks():
+    def get_tasks(df):
         pass

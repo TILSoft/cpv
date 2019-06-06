@@ -52,8 +52,8 @@ CREATE TABLE IF NOT EXISTS `cpv`.`params_values` (
   `PO` VARCHAR(10) NOT NULL,
   `family` VARCHAR(30) NOT NULL,
   `area` VARCHAR(12) NOT NULL,
-  `parameter` VARCHAR(30) NOT NULL,
+  `parameter` VARCHAR(64) NOT NULL,
   `value` VARCHAR(30) NOT NULL,
-  `unit` VARCHAR(4) NULL,
+  `unit` VARCHAR(16) NULL,
   `inputdate` DATETIME NOT NULL,
   PRIMARY KEY (`PO`, `family`, `area`, `parameter`));
