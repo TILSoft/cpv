@@ -44,10 +44,11 @@ db.save_last_extraction_time(newest_inputdate)
 # %%
 # Prep parameters dataframes
 # Filter to include only required parameters
-df_param_main_values = df_params.loc[df_params["PARAMETERCODE"].isin(df_param_list_main['parameter'])]
-df_param_taggers = df_params.loc[df_params["PARAMETERCODE"].isin(df_param_list_taggers['parameter'])]
-df_param_agg = df_params.loc[df_params["PARAMETERCODE"].isin(df_param_list_agg['parameter'])]
-del df_params
+# df_param_main_values = df_params.loc[df_params["PARAMETERCODE"].isin(df_param_list_main['parameter'])
+#                     & df_params["PARAMETERCODE"].isin(df_param_list_taggers['parameter'])]
+# df_param_taggers = df_params.loc[df_params["PARAMETERCODE"].isin(df_param_list_taggers['parameter'])]
+# df_param_agg = df_params.loc[df_params["PARAMETERCODE"].isin(df_param_list_agg['parameter'])]
+# del df_params
 
 # %%
 # Get process orders
@@ -55,29 +56,29 @@ df_orders = xfp.get_orders(USE_ARCH_DB)
 
 # %%
 # join with po table, mainly to get the master emi to join the param csv file later
-df_param_main_values = pd.merge(df_param_main_values,
+df_params = pd.merge(df_params,
               df_orders,
               left_on='MANCODE', right_on='PO')
 
 # %%
 # join with parameter list to get family name, needed for saving separate files
-df_param_main_values = pd.merge(df_param_main_values,
+df_params = pd.merge(df_params,
                  df_param_list_main,
                  left_on=['PARAMETERCODE','EMI_MASTER'],
                  right_on=['parameter','emi_master'])
 
 # %%
 # Filter out indexes smaller than max input index
-df_param_main_values = df_param_main_values.loc[df_param_main_values.groupby(['MANCODE', 'EMI_MASTER', 'PARAMETERCODE'])["INPUTINDEX"].idxmax()]
+df_params = df_params.loc[df_params.groupby(['MANCODE', 'EMI_MASTER', 'PARAMETERCODE'])["INPUTINDEX"].idxmax()]
 
 
 # %%
 
-df_param_main_values.head()
+df_params.head()
 
 
 #%%
-db.update_params_values(df_param_main_values)
+db.update_params_values(df_params)
 
 # %%
 end1 = timer()
