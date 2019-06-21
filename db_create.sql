@@ -64,4 +64,6 @@ CREATE TABLE IF NOT EXISTS `cpv`.`params_values` (
   `value` VARCHAR(30) NOT NULL,
   `unit` VARCHAR(16) NULL,
   `inputdate` DATETIME NOT NULL,
+  `range_min` DECIMAL NOT NULL,
+  `range_max` DECIMAL NOT NULL,
   PRIMARY KEY (`PO`, `family`, `area`, `parameter`));

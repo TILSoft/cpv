@@ -26,7 +26,7 @@ def excel_upload():
     df = trim_all_columns(df)
     db.update(statement, df)
 
-    table = f"{__DB}.params_taggers"
+    table = f"{__DB}.params_special"
     statement = text(f"""INSERT INTO {table} VALUES (:emi_master,
                     :emi_parent, :emi_sub,
                     :parameter, :task, :groupid,

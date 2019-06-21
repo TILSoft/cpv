@@ -79,10 +79,10 @@ class DataBase:
         return cls.select(query)
 
     @classmethod
-    def get_param_list_taggers(cls):
-        """Get the taggers parameter table"""
+    def get_param_list_special(cls):
+        """Get the special parameter table"""
 
-        query = "select * from cpv.params_taggers"
+        query = "select * from cpv.params_special"
         return cls.select(query)
 
     @classmethod

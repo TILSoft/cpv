@@ -22,12 +22,10 @@ if REDO_EVERYTHING:
 # %%
 # get list of all parameters to be extracted from XFP formated for SQL
 df_param_list_main = db.get_param_list_main()
-df_param_list_taggers = db.get_param_list_taggers()
-df_param_list_agg = db.get_param_list_agg()
+df_param_list_special = db.get_param_list_special()
 df_param_list_column = pd.concat([
     df_param_list_main['parameter'],
-    df_param_list_taggers['parameter'],
-    df_param_list_agg['parameter']],
+    df_param_list_special['parameter'],
     ignore_index=True, sort=False).drop_duplicates().reset_index(drop=True)
 format_param_list = format_params_list(df_param_list_column)
 
@@ -44,11 +42,10 @@ db.save_last_extraction_time(newest_inputdate)
 # %%
 # Prep parameters dataframes
 # Filter to include only required parameters
-# df_param_main_values = df_params.loc[df_params["PARAMETERCODE"].isin(df_param_list_main['parameter'])
-#                     & df_params["PARAMETERCODE"].isin(df_param_list_taggers['parameter'])]
-# df_param_taggers = df_params.loc[df_params["PARAMETERCODE"].isin(df_param_list_taggers['parameter'])]
-# df_param_agg = df_params.loc[df_params["PARAMETERCODE"].isin(df_param_list_agg['parameter'])]
-# del df_params
+df_param_main_values = df_params.loc[df_params["PARAMETERCODE"].isin(df_param_list_main['parameter'])]
+df_param_special = df_params.loc[df_params["PARAMETERCODE"].isin(df_param_list_special['parameter'])]
+del
+
 
 # %%
 # Get process orders
@@ -56,29 +53,29 @@ df_orders = xfp.get_orders(USE_ARCH_DB)
 
 # %%
 # join with po table, mainly to get the master emi to join the param csv file later
-df_params = pd.merge(df_params,
+df_param_main_values = pd.merge(df_param_main_values,
               df_orders,
               left_on='MANCODE', right_on='PO')
 
 # %%
 # join with parameter list to get family name, needed for saving separate files
-df_params = pd.merge(df_params,
+df_param_main_values = pd.merge(df_param_main_values,
                  df_param_list_main,
                  left_on=['PARAMETERCODE','EMI_MASTER'],
                  right_on=['parameter','emi_master'])
 
 # %%
 # Filter out indexes smaller than max input index
-df_params = df_params.loc[df_params.groupby(['MANCODE', 'EMI_MASTER', 'PARAMETERCODE'])["INPUTINDEX"].idxmax()]
+df_param_main_values = df_params.loc[df_params.groupby(['MANCODE', 'EMI_MASTER', 'PARAMETERCODE'])["INPUTINDEX"].idxmax()]
 
 
 # %%
 
-df_params.head()
+df_param_main_values.head()
 
 
 #%%
-db.update_params_values(df_params)
+db.update_params_values(df_param_main_values)
 
 # %%
 end1 = timer()
