@@ -19,7 +19,8 @@
 			"timeit",
 			"xlsx"
 		],
-		"python.pythonPath": "/home/krzysiek/.local/share/virtualenvs/cpv-yt2s6DkN/bin/python"
+		"python.pythonPath": "/home/krzysiek/.local/share/virtualenvs/cpv-yt2s6DkN/bin/python",
+		"git.postCommitCommand": "sync"
 	},
 
 }

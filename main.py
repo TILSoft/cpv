@@ -1,13 +1,14 @@
 # %%
-start1 = timer()
+from timeit import default_timer as timer
 import pandas as pd
 pd.options.display.max_columns = None
 from xfp import Xfp as xfp
 from database import DataBase as db
 from myhelpers import format_params_list
-from timeit import default_timer as timer
+
 from db_excel_upload import excel_upload
 # %%
+start1 = timer()
 
 #LAST_EXTRACTION = db.get_last_extraction_time()
 LAST_EXTRACTION = "2019-06-04 09:00:00"
@@ -23,17 +24,17 @@ if REDO_EVERYTHING:
 # get list of all parameters to be extracted from XFP formated for SQL
 df_param_list_main = db.get_param_list_main()
 df_param_list_special = db.get_param_list_special()
-df_param_list_column = pd.concat([
-    df_param_list_main['parameter'],
-    df_param_list_special['parameter'],
-    ignore_index=True, sort=False).drop_duplicates().reset_index(drop=True)
+df_param_list_column = pd.concat([df_param_list_main['parameter'],
+                                  df_param_list_special['parameter']],
+                                 ignore_index=True, sort=False
+                                 ).drop_duplicates().reset_index(drop=True)
 format_param_list = format_params_list(df_param_list_column)
 
 # %%
 # extract all parameters
 start = timer()
 df_params = xfp.get_parameters(format_param_list, LAST_EXTRACTION,
-                                REDO_EVERYTHING, USE_ARCH_DB)
+                               REDO_EVERYTHING, USE_ARCH_DB)
 end = timer()
 print("df_params duration = " + str((end - start) / 60) + " min")
 newest_inputdate = xfp.get_newest_inputdate(df_params)
@@ -42,9 +43,10 @@ db.save_last_extraction_time(newest_inputdate)
 # %%
 # Prep parameters dataframes
 # Filter to include only required parameters
-df_param_main_values = df_params.loc[df_params["PARAMETERCODE"].isin(df_param_list_main['parameter'])]
-df_param_special = df_params.loc[df_params["PARAMETERCODE"].isin(df_param_list_special['parameter'])]
-del
+df_param_main_values = df_params.loc[df_params["PARAMETERCODE"].isin(
+                                    df_param_list_main['parameter'])]
+df_param_special = df_params.loc[df_params["PARAMETERCODE"].isin(
+                                    df_param_list_special['parameter'])]
 
 
 # %%
@@ -52,31 +54,35 @@ del
 df_orders = xfp.get_orders(USE_ARCH_DB)
 
 # %%
-# join with po table, mainly to get the master emi to join the param csv file later
+# join with the po table,
+# mainly to get the master emi to join the param csv file later
 df_param_main_values = pd.merge(df_param_main_values,
-              df_orders,
-              left_on='MANCODE', right_on='PO')
+                                df_orders,
+                                left_on='MANCODE', right_on='PO')
 
 # %%
 # join with parameter list to get family name, needed for saving separate files
 df_param_main_values = pd.merge(df_param_main_values,
-                 df_param_list_main,
-                 left_on=['PARAMETERCODE','EMI_MASTER'],
-                 right_on=['parameter','emi_master'])
+                                df_param_list_main,
+                                left_on=['PARAMETERCODE','EMI_MASTER'],
+                                right_on=['parameter','emi_master'])
 
 # %%
 # Filter out indexes smaller than max input index
-df_param_main_values = df_params.loc[df_params.groupby(['MANCODE', 'EMI_MASTER', 'PARAMETERCODE'])["INPUTINDEX"].idxmax()]
+df_param_main_values = df_params.loc[df_params.groupby(
+                                    ['MANCODE', 'EMI_MASTER', 'PARAMETERCODE']
+                                    )["INPUTINDEX"].idxmax()]
 
 
 # %%
-
 df_param_main_values.head()
 
 
-#%%
+# %%
 db.update_params_values(df_param_main_values)
 
 # %%
 end1 = timer()
 print("Execution duration = " + str((end1 - start1) / 60) + " min")
+
+# %%

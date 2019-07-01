@@ -17,7 +17,8 @@ def excel_upload():
     table = f"{__DB}.params_main"
     statement = text(f"""INSERT INTO {table} VALUES (:emi_master,
                     :parameter, :family, :area, :description,
-                    :dataformat, :range_min, :range_max) ON DUPLICATE KEY UPDATE
+                    :dataformat, :range_min, :range_max)
+                    ON DUPLICATE KEY UPDATE
                     family = :family, area = :area,
                     description = :description,
                     dataformat = :dataformat,

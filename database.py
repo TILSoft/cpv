@@ -140,9 +140,8 @@ class DataBase:
         engine = create_engine('mysql://{}:{}@{}/{}'.format(
                 cls.__USERNAME, cls.__PASSWORD, cls.__HOST, cls.__DB))
         statements = [f"TRUNCATE TABLE {cls.__DB}.params_values",
-                    f"TRUNCATE TABLE {cls.__DB}.params_aggregate",
-                    f"TRUNCATE TABLE {cls.__DB}.params_main",
-                    f"TRUNCATE TABLE {cls.__DB}.params_taggers"]
+                      f"TRUNCATE TABLE {cls.__DB}.params_special",
+                      f"TRUNCATE TABLE {cls.__DB}.params_main"]
         connection = engine.connect()
         with connection.begin() as transaction:
             try:
