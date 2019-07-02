@@ -10,11 +10,11 @@ from db_excel_upload import excel_upload
 # %%
 start1 = timer()
 
-#LAST_EXTRACTION = db.get_last_extraction_time()
-LAST_EXTRACTION = "2019-06-04 09:00:00"
+LAST_EXTRACTION = db.get_last_extraction_time()
+#LAST_EXTRACTION = "2019-06-04 09:00:00"
 USE_ARCH_DB = False
-#Means reread all params data, purge table and pulll ALL the parameters
-REDO_EVERYTHING = True
+# Means reread all params data, purge table and pulll ALL the parameters
+REDO_EVERYTHING = False
 if REDO_EVERYTHING:
     USE_ARCH_DB = True
     db.truncate_all()
@@ -61,16 +61,22 @@ df_param_main_values = pd.merge(df_param_main_values,
                                 left_on='MANCODE', right_on='PO')
 
 # %%
+df_param_main_values.head()
+# %%
+df_orders.head()
+# %%
+df_param_list_main.head()
+
+# %%
 # join with parameter list to get family name, needed for saving separate files
 df_param_main_values = pd.merge(df_param_main_values,
                                 df_param_list_main,
-                                left_on=['PARAMETERCODE','EMI_MASTER'],
-                                right_on=['parameter','emi_master'])
+                                left_on=['PARAMETERCODE', 'EMI_MASTER'],
+                                right_on=['parameter', 'emi_master'])
 
 # %%
 # Filter out indexes smaller than max input index
-df_param_main_values = df_params.loc[df_params.groupby(
-                                    ['MANCODE', 'EMI_MASTER', 'PARAMETERCODE']
+df_param_main_values = df_param_main_values.loc[df_param_main_values.groupby(['MANCODE', 'EMI_MASTER', 'PARAMETERCODE']
                                     )["INPUTINDEX"].idxmax()]
 
 
@@ -79,10 +85,13 @@ df_param_main_values.head()
 
 
 # %%
+# update db
 db.update_params_values(df_param_main_values)
 
 # %%
+# summary
+print(f"Ther are {df_param_main_values.shape[0]} new records.")
 end1 = timer()
-print("Execution duration = " + str((end1 - start1) / 60) + " min")
+print(f"Total execution time = {str(round(((end1 - start1) / 60), 2))} min")
 
 # %%
