@@ -32,7 +32,7 @@ CREATE TABLE IF NOT EXISTS `cpv`.`params_special` (
   `emi_parent` VARCHAR(8) NOT NULL,
   `emi_sub` VARCHAR(8) NOT NULL,
   `parameter` VARCHAR(30) NOT NULL,
-  `task` VARCHAR(30) NOT NULL,
+  `subemi_name` VARCHAR(30) NOT NULL,
   `groupid` INT NOT NULL,
   `area` VARCHAR(12) NOT NULL,
   `family` VARCHAR(30) NOT NULL,
@@ -41,7 +41,7 @@ CREATE TABLE IF NOT EXISTS `cpv`.`params_special` (
   `dataformat` VARCHAR(12) NULL,
   `range_min` DECIMAL NOT NULL,
   `range_max` DECIMAL NOT NULL,
-  PRIMARY KEY (`emi_master`, `emi_parent`, `emi_sub`, `parameter`, `task`));
+  PRIMARY KEY (`emi_master`, `emi_parent`, `emi_sub`, `parameter`, `subemi_name`));
 
 -- CREATE TABLE IF NOT EXISTS `cpv`.`params_aggregate` (
 --   `emi_master` VARCHAR(8) NOT NULL,

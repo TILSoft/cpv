@@ -5,11 +5,9 @@ pd.options.display.max_columns = None
 from xfp import Xfp as xfp
 from database import DataBase as db
 from myhelpers import format_params_list
-
 from db_excel_upload import excel_upload
 # %%
 start1 = timer()
-
 LAST_EXTRACTION = db.get_last_extraction_time()
 #LAST_EXTRACTION = "2019-06-04 09:00:00"
 USE_ARCH_DB = False
@@ -47,6 +45,9 @@ df_param_main_values = df_params.loc[df_params["PARAMETERCODE"].isin(
                                     df_param_list_main['parameter'])]
 df_param_special = df_params.loc[df_params["PARAMETERCODE"].isin(
                                     df_param_list_special['parameter'])]
+
+# %%
+# get all special parameters
 
 
 # %%

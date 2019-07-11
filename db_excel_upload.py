@@ -30,7 +30,7 @@ def excel_upload():
     table = f"{__DB}.params_special"
     statement = text(f"""INSERT INTO {table} VALUES (:emi_master,
                     :emi_parent, :emi_sub,
-                    :parameter, :task, :groupid,
+                    :parameter, :subemi_name, :groupid,
                     :area, :family, :description,
                     :agg_function, :dataformat, :range_min, :range_max)
                     ON DUPLICATE KEY UPDATE

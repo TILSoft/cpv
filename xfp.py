@@ -90,7 +90,7 @@ class Xfp:
         else:
             df_params = df_prd.drop_duplicates().reset_index(drop=True)
 
-        # the dt.strftime cant handle when the date is too old or too new
+        # for some reason ther are some strange dates in the database
         df_params.drop(df_params.loc[(df_params["DATATYPE"] == 2) & (df_params["DATEVALUE"].astype(str).str.startswith("0"))].index
                ,inplace=True
                ,axis=0)
