@@ -1,4 +1,4 @@
-# Helper functions
+""" Helper functions """
 
 # %%
 
@@ -15,6 +15,6 @@ def trim_all_columns(dataframe):
     """
     Trim whitespace from ends of each value across all series in dataframe
     """
-    def trim(x):
-        return x.strip() if type(x) is str else x
+    def trim(value):
+        return value.strip() if isinstance(value, str) else value
     return dataframe.applymap(trim)

@@ -1,15 +1,19 @@
+"""Main file to be executed"""
+# pylint: disable=invalid-name
 # %%
+
 from timeit import default_timer as timer
 import pandas as pd
-pd.options.display.max_columns = None
 from xfp import Xfp as xfp
 from database import DataBase as db
 from myhelpers import format_params_list
 from db_excel_upload import excel_upload
+pd.options.display.max_columns = None
+
 # %%
 start1 = timer()
 LAST_EXTRACTION = db.get_last_extraction_time()
-#LAST_EXTRACTION = "2019-06-04 09:00:00"
+# LAST_EXTRACTION = "2019-06-04 09:00:00"
 USE_ARCH_DB = False
 # Means reread all params data, purge table and pulll ALL the parameters
 REDO_EVERYTHING = False
@@ -42,13 +46,20 @@ db.save_last_extraction_time(newest_inputdate)
 # Prep parameters dataframes
 # Filter to include only required parameters
 df_param_main_values = df_params.loc[df_params["PARAMETERCODE"].isin(
-                                    df_param_list_main['parameter'])]
+    df_param_list_main['parameter'])]
 df_param_special = df_params.loc[df_params["PARAMETERCODE"].isin(
-                                    df_param_list_special['parameter'])]
+    df_param_list_special['parameter'])]
+df_param_special.head()
+
 
 # %%
-# get all special parameters
-
+# Get all special parameters to recalculate agg functions
+if (not REDO_EVERYTHING) and (not df_param_special.empty):
+    format_param_list = format_params_list(df_param_special['PARAMETERCODE'])
+    format_wo_list = format_params_list(df_param_special['MANCODE'])
+    df_param_special = xfp.get_parameters(
+        format_param_list, LAST_EXTRACTION,
+        REDO_EVERYTHING, USE_ARCH_DB, special=True)
 
 # %%
 # Get process orders
@@ -77,8 +88,8 @@ df_param_main_values = pd.merge(df_param_main_values,
 
 # %%
 # Filter out indexes smaller than max input index
-df_param_main_values = df_param_main_values.loc[df_param_main_values.groupby(['MANCODE', 'EMI_MASTER', 'PARAMETERCODE']
-                                    )["INPUTINDEX"].idxmax()]
+df_param_main_values = df_param_main_values.loc[df_param_main_values.groupby(
+    ['MANCODE', 'EMI_MASTER', 'PARAMETERCODE'])["INPUTINDEX"].idxmax()]
 
 
 # %%

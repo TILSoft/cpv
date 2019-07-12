@@ -1,5 +1,5 @@
 """Execute all the queries on the main mysql database"""
-
+# pylint: disable=broad-except
 # %%
 import os
 from sqlalchemy import create_engine
@@ -112,9 +112,9 @@ class DataBase:
     def get_last_extraction_time(cls):
         """get the last extraction time"""
 
-        query = "select value FROM cpv.key_values where keyname = 'last_extracted'"
+        query = "select value FROM cpv.key_values where keyname = \
+                'last_extracted'"
         return cls.select(query).iloc[0]["value"]
-
 
     @classmethod
     def xfp_run_sql(cls, query):
@@ -137,8 +137,9 @@ class DataBase:
 
     @classmethod
     def truncate_all(cls):
+        """When doing full upload delete all rows before insert"""
         engine = create_engine('mysql://{}:{}@{}/{}'.format(
-                cls.__USERNAME, cls.__PASSWORD, cls.__HOST, cls.__DB))
+            cls.__USERNAME, cls.__PASSWORD, cls.__HOST, cls.__DB))
         statements = [f"TRUNCATE TABLE {cls.__DB}.params_values",
                       f"TRUNCATE TABLE {cls.__DB}.params_special",
                       f"TRUNCATE TABLE {cls.__DB}.params_main"]
@@ -150,4 +151,3 @@ class DataBase:
             except Exception as e:
                 print(e)
                 transaction.rollback()
-

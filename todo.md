@@ -1,9 +1,11 @@
 # Project TODO list
 
 - Special Parameters
-  - [ ] from params main filter out non special params and save as df_spec
+  - [ ] from params main filter out non special params and save
   - if not redo
-    - [ ] get all df_spec params from the database to ensure agg functions are recalculated based on all values
+    - [ ] get all params from the database to ensure agg functions are recalculated based on all values
+      - [ ] filter by work orders
+      - [ ] include all parameters from the same group
   - [ ] get list of tasks for special
   - [ ] if thickness manuall present, ignore AT4 parameter
   - [ ] ignore hardness 0 values to not affect MIN value
