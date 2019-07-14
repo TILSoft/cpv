@@ -12,11 +12,13 @@ pd.options.display.max_columns = None
 
 # %%
 start1 = timer()
-LAST_EXTRACTION = db.get_last_extraction_time()
-# LAST_EXTRACTION = "2019-06-04 09:00:00"
+# LAST_EXTRACTION = db.get_last_extraction_time()
+LAST_EXTRACTION = "2019-07-04 09:00:00"
 USE_ARCH_DB = False
 # Means reread all params data, purge table and pulll ALL the parameters
 REDO_EVERYTHING = False
+format_param_list = ""
+format_wo_list = ""
 if REDO_EVERYTHING:
     USE_ARCH_DB = True
     db.truncate_all()
@@ -35,7 +37,7 @@ format_param_list = format_params_list(df_param_list_column)
 # %%
 # extract all parameters
 start = timer()
-df_params = xfp.get_parameters(format_param_list, LAST_EXTRACTION,
+df_params = xfp.get_parameters(format_param_list, format_wo_list, LAST_EXTRACTION,
                                REDO_EVERYTHING, USE_ARCH_DB)
 end = timer()
 print("df_params duration = " + str((end - start) / 60) + " min")
@@ -49,17 +51,16 @@ df_param_main_values = df_params.loc[df_params["PARAMETERCODE"].isin(
     df_param_list_main['parameter'])]
 df_param_special = df_params.loc[df_params["PARAMETERCODE"].isin(
     df_param_list_special['parameter'])]
-df_param_special.head()
 
 
 # %%
 # Get all special parameters to recalculate agg functions
 if (not REDO_EVERYTHING) and (not df_param_special.empty):
-    format_param_list = format_params_list(df_param_special['PARAMETERCODE'])
+    format_param_list = format_params_list(df_param_special["PARAMETERCODE"], df_param_list_special)
     format_wo_list = format_params_list(df_param_special['MANCODE'])
     df_param_special = xfp.get_parameters(
-        format_param_list, LAST_EXTRACTION,
-        REDO_EVERYTHING, USE_ARCH_DB, special=True)
+        format_param_list, format_wo_list, LAST_EXTRACTION,
+        REDO_EVERYTHING, USE_ARCH_DB)
 
 # %%
 # Get process orders

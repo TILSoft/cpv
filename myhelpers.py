@@ -2,14 +2,18 @@
 
 # %%
 
-
-def format_params_list(column):
-    """Format the parameter list for the SQL query"""
+def format_params_list(column, df_special=None):
+    """
+    Format the parameter list for the SQL query
+    """
     params = ""
+    column = column.unique()
+    if df_special is not None:
+        groups = df_special.loc[df_special["parameter"].isin(column), "groupid"]
+        column = df_special.loc[df_special["groupid"].isin(groups), "parameter"]
     for row in column:
         params = params + "'" + row + "',"
     return params[:-1]
-
 
 def trim_all_columns(dataframe):
     """

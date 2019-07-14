@@ -44,12 +44,18 @@ class Xfp:
         return trim_all_columns(df_po)
 
     @staticmethod
-    def get_parameters(params, time, redo, arch_db, special=False):
+    def get_parameters(params, wos, time, redo, arch_db):
         """Get parameters from XFP"""
 
+        special = False
+        orders = ""
         date_txt = f"""and inputdate >= TO_DATE('{time}',
                       'yyyy-mm-dd hh24:mi:ss')"""
-        if redo:
+
+        if wos:
+            special = True
+            orders = f"""and mancode in ({wos})"""
+        if redo or special:
             date_txt = ""
 
         sql_params_prd = f"""select picode as picode, mancode, batchid,
@@ -59,6 +65,7 @@ class Xfp:
                                 dbms_lob.substr(textvalue,4000,1) as textvalue
                                 from ELAN2406PRD.e2s_pidata_man
                                 where parametercode in ({params})
+                                {orders}
                                 {date_txt}
                                 """
 
@@ -82,7 +89,7 @@ class Xfp:
         else:
             df_params = df_prd.drop_duplicates().reset_index(drop=True)
 
-        # for some reason ther are some strange dates in the database
+        # for some reason there are some strange dates in the database
         df_params.drop(df_params.loc[(df_params["DATATYPE"] == 2) &
                                      (df_params["DATEVALUE"]
                                       .astype(str).str.startswith("0"))].index,
@@ -90,6 +97,10 @@ class Xfp:
         df_params.drop(df_params.loc[(df_params["DATATYPE"] == 2) &
                                      (df_params["DATEVALUE"]
                                       .astype(str).str.startswith("28"))].index,
+                       inplace=True, axis=0)
+        df_params.drop(df_params.loc[(df_params["DATATYPE"] == 2) &
+                                     (df_params["DATEVALUE"]
+                                      .astype(str).str.startswith("1900"))].index,
                        inplace=True, axis=0)
 
         # check and save an actual value
