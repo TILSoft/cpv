@@ -14,6 +14,7 @@ __DB = os.environ['MYSQL_DB']
 def excel_upload():
     """Main function"""
 
+    db.truncate_tables(False)
     table = f"{__DB}.params_main"
     statement = text(f"""INSERT INTO {table} VALUES (:emi_master,
                     :parameter, :family, :area, :description,
@@ -23,9 +24,9 @@ def excel_upload():
                     description = :description,
                     dataformat = :dataformat,
                     range_min = :range_min, range_max = :range_max""")
-    df = pd.read_excel('input/params_main.xlsx')
-    df = trim_all_columns(df)
-    db.update(statement, df)
+    dataframe = pd.read_excel('input/params_main.xlsx')
+    dataframe = trim_all_columns(dataframe)
+    db.update(statement, dataframe)
 
     table = f"{__DB}.params_special"
     statement = text(f"""INSERT INTO {table} VALUES (:emi_master,
@@ -38,26 +39,6 @@ def excel_upload():
                     description = :description,
                     dataformat = :dataformat,
                     range_min = :range_min, range_max = :range_max""")
-    df = pd.read_excel('input/params_special.xlsx')
-    df = trim_all_columns(df)
-    db.update(statement, df)
-
-    # table = f"{__DB}.params_aggregate"
-    # statement = text(
-    #     f"""INSERT INTO {table} VALUES (:emi_master, :emi_parent, :emi_sub,
-    #                 :parameter, :groupid, :family, :area, :description,
-    #                 :agg_function, :dataformat) ON DUPLICATE KEY UPDATE
-    #                 groupid = :groupid,
-    #                 family = :family,
-    #                 area = :area,
-    #                 description = :description,
-    #                 agg_function = :agg_function,
-    #                 dataformat = :dataformat
-    #                 """)
-    # df = pd.read_excel('input/params_aggregate.xlsx')
-    # df = trim_all_columns(df)
-    # db.update(statement, df)
-
-
-# if __name__ == "__main__":
-#     main()
+    dataframe = pd.read_excel('input/params_special.xlsx')
+    dataframe = trim_all_columns(dataframe)
+    db.update(statement, dataframe)

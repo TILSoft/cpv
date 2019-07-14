@@ -21,15 +21,15 @@ format_param_list = ""
 format_wo_list = ""
 if REDO_EVERYTHING:
     USE_ARCH_DB = True
-    db.truncate_all()
+    db.truncate_tables()
     excel_upload()
 
 # %%
 # get list of all parameters to be extracted from XFP formated for SQL
 df_param_list_main = db.get_param_list_main()
 df_param_list_special = db.get_param_list_special()
-df_param_list_column = pd.concat([df_param_list_main['parameter'],
-                                  df_param_list_special['parameter']],
+df_param_list_column = pd.concat([df_param_list_main["parameter"],
+                                  df_param_list_special["parameter"]],
                                  ignore_index=True, sort=False
                                  ).drop_duplicates().reset_index(drop=True)
 format_param_list = format_params_list(df_param_list_column)
@@ -48,49 +48,91 @@ db.save_last_extraction_time(newest_inputdate)
 # Prep parameters dataframes
 # Filter to include only required parameters
 df_param_main_values = df_params.loc[df_params["PARAMETERCODE"].isin(
-    df_param_list_main['parameter'])]
+    df_param_list_main["parameter"])]
 df_param_special = df_params.loc[df_params["PARAMETERCODE"].isin(
-    df_param_list_special['parameter'])]
-
-
-# %%
-# Get all special parameters to recalculate agg functions
-if (not REDO_EVERYTHING) and (not df_param_special.empty):
-    format_param_list = format_params_list(df_param_special["PARAMETERCODE"], df_param_list_special)
-    format_wo_list = format_params_list(df_param_special['MANCODE'])
-    df_param_special = xfp.get_parameters(
-        format_param_list, format_wo_list, LAST_EXTRACTION,
-        REDO_EVERYTHING, USE_ARCH_DB)
+    df_param_list_special["parameter"])]
 
 # %%
 # Get process orders
 df_orders = xfp.get_orders(USE_ARCH_DB)
 
 # %%
+# Get tasks
+if not df_param_special.empty:
+    format_wo_list = format_params_list(df_param_special["MANCODE"])
+    df_tasks_a = xfp.get_tasks(format_wo_list)
+    # for self merging later to get the parrent emi
+    df_tasks_b = df_tasks_a
+
+# %%
+# Get all special parameters to recalculate agg functions
+if (not REDO_EVERYTHING) and (not df_param_special.empty):
+    format_param_list = format_params_list(df_param_special["PARAMETERCODE"], df_param_list_special)
+    df_param_special = xfp.get_parameters(
+        format_param_list, format_wo_list, LAST_EXTRACTION,
+        REDO_EVERYTHING, USE_ARCH_DB)
+
+# %%
+# Merge special with tasks to filter based on the task name
+if not df_param_special.empty:
+    df_tasks_self = pd.merge(df_tasks_a, df_tasks_b,
+                             left_on=["MANCODE", "MANINDEX", "BATCHID"],
+                             right_on=["MANCODE", "MANINDEX", "TASKID"])
+    df_tasks_self.rename(columns={"PFCCODE_x": "SUBEMI", "PFCCODE_y": "PARENTEMI",
+                                  "TITLE_y": "SUBEMI_TITLE"}, inplace=True)
+    df_param_special = pd.merge(df_tasks_self, df_param_special,
+                                left_on=["MANCODE", "ELEMENTID_x", "BATCHID_x", "TASKID_y"],
+                                right_on=["MANCODE", "OPERATIONNUMBER", "BATCHID", "BATCHID"])
+    # cleanup
+    del df_tasks_self, df_tasks_a, df_tasks_b
+    df_param_special.drop(["MANINDEX", "TASKID_x", "BATCHID_x",
+                           "ELEMENTID_x", "TITLE_x", "TASKID_y",
+                           "BATCHID_y", "ELEMENTID_y", "PICODE",
+                           "OPERATIONNUMBER", "DATATYPE",
+                           "NUMVALUE", "DATEVALUE", "TEXTVALUE"],
+                          axis=1, inplace=True)
+
+# %%
+# Merge special with orders to get the master emi
+if not df_param_special.empty:
+    df_param_special = pd.merge(df_param_special, df_orders,
+                                left_on="MANCODE", right_on="PO")
+    df_param_special = pd.merge(df_param_special, df_param_list_special,
+                                left_on=["EMI_MASTER", "PARENTEMI",
+                                         "SUBEMI", "PARAMETERCODE"],
+                                right_on=["emi_master", "emi_parent",
+                                          "emi_sub", "parameter"])
+    df_param_special.drop(["PO", "emi_master", "emi_parent",
+                           "emi_sub", "parameter", "subemi_name"],
+                          axis=1, inplace=True)
+
+
+# %%
+# Filter out indexes smaller than max input index
+if not df_param_special.empty:
+    df_param_special = df_param_special.loc[df_param_special.groupby(
+        ["MANCODE", "EMI_MASTER",
+         "PARENTEMI", "SUBEMI",
+         "BATCHID", "PARAMETERCODE"])["INPUTINDEX"].idxmax()]
+
+# %%
 # join with the po table,
 # mainly to get the master emi to join the param csv file later
 df_param_main_values = pd.merge(df_param_main_values,
                                 df_orders,
-                                left_on='MANCODE', right_on='PO')
-
-# %%
-df_param_main_values.head()
-# %%
-df_orders.head()
-# %%
-df_param_list_main.head()
+                                left_on="MANCODE", right_on="PO")
 
 # %%
 # join with parameter list to get family name, needed for saving separate files
 df_param_main_values = pd.merge(df_param_main_values,
                                 df_param_list_main,
-                                left_on=['PARAMETERCODE', 'EMI_MASTER'],
-                                right_on=['parameter', 'emi_master'])
+                                left_on=["PARAMETERCODE", "EMI_MASTER"],
+                                right_on=["parameter", "emi_master"])
 
 # %%
 # Filter out indexes smaller than max input index
 df_param_main_values = df_param_main_values.loc[df_param_main_values.groupby(
-    ['MANCODE', 'EMI_MASTER', 'PARAMETERCODE'])["INPUTINDEX"].idxmax()]
+    ["MANCODE", "EMI_MASTER", "PARAMETERCODE"])["INPUTINDEX"].idxmax()]
 
 
 # %%

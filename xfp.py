@@ -60,7 +60,7 @@ class Xfp:
 
         sql_params_prd = f"""select picode as picode, mancode, batchid,
                                 parametercode as parametercode, inputindex,
-                                inputdate, datatype,
+                                inputdate, operationnumber, datatype,
                                 numvalue, datevalue,
                                 dbms_lob.substr(textvalue,4000,1) as textvalue
                                 from ELAN2406PRD.e2s_pidata_man
@@ -71,7 +71,7 @@ class Xfp:
 
         sql_params_arch = f"""select picode as picode, mancode, batchid,
                                 parametercode as parametercode, inputindex,
-                                inputdate, datatype,
+                                inputdate, operationnumber, datatype,
                                 numvalue, datevalue,
                                 dbms_lob.substr(textvalue,4000,1) as textvalue
                                 from arch2406PRD.e2s_pidata_man
@@ -118,9 +118,14 @@ class Xfp:
 
     @staticmethod
     def get_newest_inputdate(dataframe):
-        """Finds the newest date parameter idex was created"""
+        """Finds the newest date parameter index was created"""
         return dataframe.loc[:, "INPUTDATE"].max()
 
     @staticmethod
-    def get_tasks(dataframe):
+    def get_tasks(orders):
         """Extracts list of EMI tasks to be used in merging with special parameters"""
+        sql = f"""select mancode, manindex, taskid, batchid, elementid,
+                    pfccode, title from elan2406prd.e2s_pfc_task_man
+                        where status <> 6
+                        and mancode in ({orders})"""
+        return db.xfp_run_sql(sql)

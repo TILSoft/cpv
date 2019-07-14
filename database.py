@@ -86,13 +86,6 @@ class DataBase:
         return cls.select(query)
 
     @classmethod
-    def get_param_list_agg(cls):
-        """Get the aggregate parameter table"""
-
-        query = "select * from cpv.params_aggregate"
-        return cls.select(query)
-
-    @classmethod
     def save_last_extraction_time(cls, time):
         """Update the last extraction time"""
 
@@ -133,16 +126,20 @@ class DataBase:
         finally:
             connection.close()
 
-        return dataframe
+        return trim_all_columns(dataframe)
 
     @classmethod
-    def truncate_all(cls):
+    def truncate_tables(cls, values_also=True):
         """When doing full upload delete all rows before insert"""
         engine = create_engine('mysql://{}:{}@{}/{}'.format(
             cls.__USERNAME, cls.__PASSWORD, cls.__HOST, cls.__DB))
-        statements = [f"TRUNCATE TABLE {cls.__DB}.params_values",
-                      f"TRUNCATE TABLE {cls.__DB}.params_special",
+
+        statements = [f"TRUNCATE TABLE {cls.__DB}.params_special",
                       f"TRUNCATE TABLE {cls.__DB}.params_main"]
+
+        if values_also:
+            statements.append(f"TRUNCATE TABLE {cls.__DB}.params_values")
+
         connection = engine.connect()
         with connection.begin() as transaction:
             try:
