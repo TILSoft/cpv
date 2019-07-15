@@ -116,6 +116,27 @@ if not df_param_special.empty:
          "BATCHID", "PARAMETERCODE"])["INPUTINDEX"].idxmax()]
 
 # %%
+# Calculate agg values
+if not df_param_special.empty:
+    grouped = df_param_special.groupby(["MANCODE", "family", "area", "description", "agg_function", "dataformat", "groupid"])
+    df_param_special = grouped.agg(
+        {'VALUE': ['min', 'max', 'mean'], "INPUTDATE": 'max'}).reset_index()
+    df_param_special.columns = ["MANCODE", "family", "area", "description",
+                    "agg_function", "dataformat", "groupid", "MIN", "MAX", "AVG", "INPUTDATE"]
+    df_param_special["AVG"] = df_param_special["AVG"].round(2)
+    # select the actual VALUE
+    df_param_special["VALUE"] = df_param_special["MIN"]
+    df_param_special.loc[df_param_special["agg_function"] == "MAX", "VALUE"] = \
+        df_param_special["MAX"]
+    df_param_special.loc[df_param_special["agg_function"] == "AVG", "VALUE"] = \
+        df_param_special["AVG"]
+
+# %%
+# Save special parameter to the database
+if not df_param_special.empty:
+    db.update_params_values(df_param_special)
+
+# %%
 # join with the po table,
 # mainly to get the master emi to join the param csv file later
 df_param_main_values = pd.merge(df_param_main_values,
@@ -136,16 +157,13 @@ df_param_main_values = df_param_main_values.loc[df_param_main_values.groupby(
 
 
 # %%
-df_param_main_values.head()
-
-
-# %%
 # update db
 db.update_params_values(df_param_main_values)
 
 # %%
 # summary
-print(f"Ther are {df_param_main_values.shape[0]} new records.")
+print(f"There are {df_param_main_values.shape[0]} new normal records.")
+print(f"There are {df_param_special.shape[0]} new special records.")
 end1 = timer()
 print(f"Total execution time = {str(round(((end1 - start1) / 60), 2))} min")
 
