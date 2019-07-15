@@ -4,7 +4,7 @@
 import os
 import pandas as pd
 from sqlalchemy.sql import text
-from myhelpers import trim_all_columns
+from helpers import trim_all_columns
 from database import DataBase as db
 
 __DB = os.environ['MYSQL_DB']

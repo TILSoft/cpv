@@ -6,12 +6,12 @@ from sqlalchemy import create_engine
 from sqlalchemy.sql import text
 import pandas as pd
 import cx_Oracle
-from myhelpers import trim_all_columns
+from helpers import trim_all_columns
 
 
 # %%
 class DataBase:
-    """Execute all the queries on the main mysql database"""
+    """DB connections"""
 
     __DB = os.environ['MYSQL_DB']
     __PORT = os.environ['MYSQL_PORT']

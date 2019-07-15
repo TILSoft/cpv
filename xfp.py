@@ -2,7 +2,8 @@
 # %%
 import pandas as pd
 from database import DataBase as db
-from myhelpers import trim_all_columns
+from helpers import trim_all_columns
+from helpers import create_sql_snippet
 
 # %%
 
@@ -51,10 +52,11 @@ class Xfp:
         orders = ""
         date_txt = f"""and inputdate >= TO_DATE('{time}',
                       'yyyy-mm-dd hh24:mi:ss')"""
+        params = create_sql_snippet("where", "parametercode", params)
 
         if wos:
             special = True
-            orders = f"""and mancode in ({wos})"""
+            orders = create_sql_snippet("and", "mancode", wos)
         if redo or special:
             date_txt = ""
 
@@ -64,7 +66,7 @@ class Xfp:
                                 numvalue, datevalue,
                                 dbms_lob.substr(textvalue,4000,1) as textvalue
                                 from ELAN2406PRD.e2s_pidata_man
-                                where parametercode in ({params})
+                                {params}
                                 {orders}
                                 {date_txt}
                                 """
@@ -75,7 +77,7 @@ class Xfp:
                                 numvalue, datevalue,
                                 dbms_lob.substr(textvalue,4000,1) as textvalue
                                 from arch2406PRD.e2s_pidata_man
-                                where parametercode in ({params})
+                                {params}
                                 {date_txt}
                                 """
         df_prd = db.xfp_run_sql(sql_params_prd)
@@ -85,7 +87,7 @@ class Xfp:
             df_params = pd.concat([df_prd, df_arch],
                                   ignore_index=True,
                                   sort=False) \
-                                  .drop_duplicates().reset_index(drop=True)
+                .drop_duplicates().reset_index(drop=True)
         else:
             df_params = df_prd.drop_duplicates().reset_index(drop=True)
 
@@ -122,10 +124,24 @@ class Xfp:
         return dataframe.loc[:, "INPUTDATE"].max()
 
     @staticmethod
-    def get_tasks(orders):
+    def get_tasks(orders, arch_db):
         """Extracts list of EMI tasks to be used in merging with special parameters"""
-        sql = f"""select mancode, manindex, taskid, batchid, elementid,
+        orders = create_sql_snippet("and", "mancode", orders)
+        sql_prd = f"""select mancode, manindex, taskid, batchid, elementid,
                     pfccode, title from elan2406prd.e2s_pfc_task_man
                         where status <> 6
-                        and mancode in ({orders})"""
-        return db.xfp_run_sql(sql)
+                        {orders}"""
+        sql_arch = f"""select mancode, manindex, taskid, batchid, elementid,
+                    pfccode, title from elan2406prd.e2s_pfc_task_man
+                        where status <> 6
+                        {orders}"""
+        df_prd = db.xfp_run_sql(sql_prd)
+        if arch_db:
+            df_arch = db.xfp_run_sql(sql_arch)
+            df_tasks = pd.concat([df_prd, df_arch],
+                                 ignore_index=True,
+                                 sort=False) \
+                .drop_duplicates().reset_index(drop=True)
+        else:
+            df_tasks = df_prd.drop_duplicates().reset_index(drop=True)
+        return df_tasks

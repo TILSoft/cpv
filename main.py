@@ -1,4 +1,4 @@
-"""Main file to be executed"""
+# """Main file to be executed"""
 # pylint: disable=invalid-name
 # %%
 
@@ -6,17 +6,18 @@ from timeit import default_timer as timer
 import pandas as pd
 from xfp import Xfp as xfp
 from database import DataBase as db
-from myhelpers import format_params_list
+from helpers import format_params_list
 from db_excel_upload import excel_upload
 pd.options.display.max_columns = None
 
 # %%
+# initialization
 start1 = timer()
-# LAST_EXTRACTION = db.get_last_extraction_time()
-LAST_EXTRACTION = "2019-07-04 09:00:00"
+LAST_EXTRACTION = db.get_last_extraction_time()
+#LAST_EXTRACTION = "2019-07-04 09:00:00"
 USE_ARCH_DB = False
 # Means reread all params data, purge table and pulll ALL the parameters
-REDO_EVERYTHING = False
+REDO_EVERYTHING = True
 format_param_list = ""
 format_wo_list = ""
 if REDO_EVERYTHING:
@@ -39,18 +40,14 @@ format_param_list = format_params_list(df_param_list_column)
 start = timer()
 df_params = xfp.get_parameters(format_param_list, format_wo_list, LAST_EXTRACTION,
                                REDO_EVERYTHING, USE_ARCH_DB)
-end = timer()
-print("df_params duration = " + str((end - start) / 60) + " min")
 newest_inputdate = xfp.get_newest_inputdate(df_params)
 db.save_last_extraction_time(newest_inputdate)
 
 # %%
 # Prep parameters dataframes
 # Filter to include only required parameters
-df_param_main_values = df_params.loc[df_params["PARAMETERCODE"].isin(
-    df_param_list_main["parameter"])]
-df_param_special = df_params.loc[df_params["PARAMETERCODE"].isin(
-    df_param_list_special["parameter"])]
+df_param_main_values = df_params.loc[df_params["PARAMETERCODE"].isin(df_param_list_main["parameter"])]
+df_param_special = df_params.loc[df_params["PARAMETERCODE"].isin(df_param_list_special["parameter"])]
 
 # %%
 # Get process orders
@@ -60,7 +57,7 @@ df_orders = xfp.get_orders(USE_ARCH_DB)
 # Get tasks
 if not df_param_special.empty:
     format_wo_list = format_params_list(df_param_special["MANCODE"])
-    df_tasks_a = xfp.get_tasks(format_wo_list)
+    df_tasks_a = xfp.get_tasks(format_wo_list, USE_ARCH_DB)
     # for self merging later to get the parrent emi
     df_tasks_b = df_tasks_a
 
@@ -71,6 +68,11 @@ if (not REDO_EVERYTHING) and (not df_param_special.empty):
     df_param_special = xfp.get_parameters(
         format_param_list, format_wo_list, LAST_EXTRACTION,
         REDO_EVERYTHING, USE_ARCH_DB)
+
+# %%
+# Extraction duration
+end = timer()
+print("Parameters extraction duration= " + str((end - start) / 60) + " min")
 
 # %%
 # Merge special with tasks to filter based on the task name
@@ -106,7 +108,6 @@ if not df_param_special.empty:
                            "emi_sub", "parameter", "subemi_name"],
                           axis=1, inplace=True)
 
-
 # %%
 # Filter out indexes smaller than max input index
 if not df_param_special.empty:
@@ -118,9 +119,10 @@ if not df_param_special.empty:
 # %%
 # Calculate agg values
 if not df_param_special.empty:
+    df_param_special["VALUE"] = pd.to_numeric( \
+        df_param_special["VALUE"], errors='coerce', downcast='float')
     grouped = df_param_special.groupby(["MANCODE", "family", "area", "description", "agg_function", "dataformat", "groupid"])
-    df_param_special = grouped.agg(
-        {'VALUE': ['min', 'max', 'mean'], "INPUTDATE": 'max'}).reset_index()
+    df_param_special = grouped.agg({'VALUE': ['min', 'max', 'mean'], "INPUTDATE": 'max'}).reset_index()
     df_param_special.columns = ["MANCODE", "family", "area", "description",
                     "agg_function", "dataformat", "groupid", "MIN", "MAX", "AVG", "INPUTDATE"]
     df_param_special["AVG"] = df_param_special["AVG"].round(2)
@@ -167,4 +169,5 @@ print(f"There are {df_param_special.shape[0]} new special records.")
 end1 = timer()
 print(f"Total execution time = {str(round(((end1 - start1) / 60), 2))} min")
 
-# %%
+
+#%%
