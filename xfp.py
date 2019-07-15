@@ -105,6 +105,8 @@ class Xfp:
                                       .astype(str).str.startswith("1900"))].index,
                        inplace=True, axis=0)
 
+        # Rounding
+        df_params["NUMVALUE"] = df_params["NUMVALUE"].round(2)
         # check and save an actual value
         df_params["VALUE"] = df_params["NUMVALUE"]
         df_params.loc[df_params["DATATYPE"] == 0, "VALUE"] = \

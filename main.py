@@ -125,13 +125,13 @@ if not df_param_special.empty:
     df_param_special = grouped.agg({'VALUE': ['min', 'max', 'mean'], "INPUTDATE": 'max'}).reset_index()
     df_param_special.columns = ["MANCODE", "family", "area", "description",
                     "agg_function", "dataformat", "groupid", "MIN", "MAX", "AVG", "INPUTDATE"]
-    df_param_special["AVG"] = df_param_special["AVG"].round(2)
     # select the actual VALUE
     df_param_special["VALUE"] = df_param_special["MIN"]
     df_param_special.loc[df_param_special["agg_function"] == "MAX", "VALUE"] = \
         df_param_special["MAX"]
     df_param_special.loc[df_param_special["agg_function"] == "AVG", "VALUE"] = \
         df_param_special["AVG"]
+    df_param_special["VALUE"] = df_param_special["VALUE"].round(2)
 
 # %%
 # Save special parameter to the database
