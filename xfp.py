@@ -19,7 +19,9 @@ class Xfp:
                         o.numlotpharma as batch,
                         o.designationproduit as description,
                         o.dtdatecreaparsyst as po_launchdate,
-                        o.codemo as emi_master
+                        o.codemo as emi_master,
+                        o.quantiteof as order_qty,
+                        o.uniteof as unit
                         from ELAN2406PRD.xfp_ofentete o
                         where o.indiceof = 0 and o.etat in ('F', 'S', 'E')
                         """
@@ -27,7 +29,9 @@ class Xfp:
                         o.numlotpharma as batch,
                         o.designationproduit as description,
                         o.dtdatecreaparsyst as po_launchdate,
-                        o.codemo as emi_master
+                        o.codemo as emi_master,
+                        o.quantiteof as order_qty,
+                        o.uniteof as unit
                         from arch2406PRD.xfp_ofentete o
                         where o.indiceof = 0 and o.etat in ('F', 'S', 'E')
                         """
@@ -48,18 +52,15 @@ class Xfp:
     def get_parameters(params, wos, time, redo, arch_db):
         """Get parameters from XFP"""
 
-        special = False
         orders = ""
         date_txt = f"""and inputdate >= TO_DATE('{time}',
                       'yyyy-mm-dd hh24:mi:ss')"""
         params = create_sql_snippet("where", "parametercode", params)
 
         if wos:
-            special = True
             orders = create_sql_snippet("and", "mancode", wos)
-        if redo or special:
+        if redo:
             date_txt = ""
-
         sql_params_prd = f"""select picode as picode, mancode, batchid,
                                 parametercode as parametercode, inputindex,
                                 inputdate, operationnumber, datatype,
@@ -134,7 +135,7 @@ class Xfp:
                         where status <> 6
                         {orders}"""
         sql_arch = f"""select mancode, manindex, taskid, batchid, elementid,
-                    pfccode, title from elan2406prd.e2s_pfc_task_man
+                    pfccode, title from arch2406prd.e2s_pfc_task_man
                         where status <> 6
                         {orders}"""
         df_prd = db.xfp_run_sql(sql_prd)

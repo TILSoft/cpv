@@ -15,15 +15,22 @@ def excel_upload():
     """Main function"""
 
     db.truncate_tables(False)
+
     table = f"{__DB}.params_main"
     statement = text(f"""INSERT INTO {table} VALUES (:emi_master,
                     :parameter, :family, :area, :description,
                     :dataformat, :range_min, :range_max)
-                    ON DUPLICATE KEY UPDATE
-                    family = :family, area = :area,
-                    description = :description,
-                    dataformat = :dataformat,
-                    range_min = :range_min, range_max = :range_max""")
+                    """)
+
+    # statement = text(f"""INSERT INTO {table} VALUES (:emi_master,
+    #                 :parameter, :family, :area, :description,
+    #                 :dataformat, :range_min, :range_max)
+    #                 ON DUPLICATE KEY UPDATE
+    #                 family = :family, area = :area,
+    #                 description = :description,
+    #                 dataformat = :dataformat,
+    #                 range_min = :range_min, range_max = :range_max""")
+
     dataframe = pd.read_excel('input/params_main.xlsx')
     dataframe = trim_all_columns(dataframe)
     db.update(statement, dataframe)
@@ -31,14 +38,20 @@ def excel_upload():
     table = f"{__DB}.params_special"
     statement = text(f"""INSERT INTO {table} VALUES (:emi_master,
                     :emi_parent, :emi_sub,
-                    :parameter, :subemi_name, :groupid,
-                    :area, :family, :description,
-                    :agg_function, :dataformat, :range_min, :range_max)
-                    ON DUPLICATE KEY UPDATE
-                    groupid = :groupid, family = :family, area = :area,
-                    description = :description,
-                    dataformat = :dataformat,
-                    range_min = :range_min, range_max = :range_max""")
+                    :parameter, :subemi_name, :description, :groupid,
+                    :area, :family,
+                    :agg_function, :dataformat, :range_min, :range_max)""")
+
+    # statement = text(f"""INSERT INTO {table} VALUES (:emi_master,
+    #                 :emi_parent, :emi_sub,
+    #                 :parameter, :subemi_name, :description, :groupid,
+    #                 :area, :family,
+    #                 :agg_function, :dataformat, :range_min, :range_max)
+    #                 ON DUPLICATE KEY UPDATE
+    #                 groupid = :groupid, family = :family, area = :area,
+    #                 dataformat = :dataformat,
+    #                 range_min = :range_min, range_max = :range_max""")
+
     dataframe = pd.read_excel('input/params_special.xlsx')
     dataframe = trim_all_columns(dataframe)
     db.update(statement, dataframe)

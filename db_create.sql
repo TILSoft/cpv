@@ -43,19 +43,6 @@ CREATE TABLE IF NOT EXISTS `cpv`.`params_special` (
   `range_max` DECIMAL NOT NULL,
   PRIMARY KEY (`emi_master`, `emi_parent`, `emi_sub`, `parameter`, `subemi_name`));
 
--- CREATE TABLE IF NOT EXISTS `cpv`.`params_aggregate` (
---   `emi_master` VARCHAR(8) NOT NULL,
---   `emi_parent` VARCHAR(8) NOT NULL,
---   `emi_sub` VARCHAR(8) NOT NULL,
---   `parameter` VARCHAR(30) NOT NULL,
---   `groupid` INT NOT NULL,
---   `family` VARCHAR(30) NOT NULL,
---   `area` VARCHAR(12) NOT NULL,
---   `description` VARCHAR(45) NOT NULL,
---   `agg_function` VARCHAR(12) NOT NULL,
---   `dataformat` VARCHAR(12) NULL,
---   PRIMARY KEY (`emi_master`, `emi_parent`, `emi_sub`, `parameter`));
-
 CREATE TABLE IF NOT EXISTS `cpv`.`params_values` (
   `PO` VARCHAR(10) NOT NULL,
   `family` VARCHAR(30) NOT NULL,
@@ -67,3 +54,13 @@ CREATE TABLE IF NOT EXISTS `cpv`.`params_values` (
   `range_min` DECIMAL NOT NULL,
   `range_max` DECIMAL NOT NULL,
   PRIMARY KEY (`PO`, `family`, `area`, `parameter`));
+
+CREATE TABLE `cpv`.`process_orders` (
+  `process_order` VARCHAR(10) NOT NULL,
+  `batch` VARCHAR(12) NOT NULL,
+  `material` VARCHAR(12) NOT NULL,
+  `description` VARCHAR(256) NOT NULL,
+  `launch_date` DATETIME NOT NULL,
+  `order_quantity` DECIMAL NOT NULL,
+  `order_unit` VARCHAR(2) NOT NULL,
+  PRIMARY KEY (`process_order`));

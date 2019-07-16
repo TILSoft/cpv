@@ -56,6 +56,24 @@ class DataBase:
         cls.update(statement, dataframe)
 
     @classmethod
+    def update_process_orders(cls, dataframe):
+        """Execute Insert or Update SQL statement on the database"""
+
+        table = f"{cls.__DB}.process_orders"
+        statement = text(f"""INSERT INTO {table} VALUES (:PO, :BATCH, :MATERIAL,
+                    :DESCRIPTION, :PO_LAUNCHDATE, :ORDER_QTY, :UNIT)
+                    ON DUPLICATE KEY UPDATE
+                    batch = :BATCH,
+                    material = :MATERIAL,
+                    description = :DESCRIPTION,
+                    launch_date = :PO_LAUNCHDATE,
+                    order_quantity = :ORDER_QTY,
+                    order_unit = :UNIT
+                    """)
+        dataframe = trim_all_columns(dataframe)
+        cls.update(statement, dataframe)
+
+    @classmethod
     def select(cls, query):
         """Return dataframe from SQL"""
 
@@ -135,7 +153,8 @@ class DataBase:
             cls.__USERNAME, cls.__PASSWORD, cls.__HOST, cls.__DB))
 
         statements = [f"TRUNCATE TABLE {cls.__DB}.params_special",
-                      f"TRUNCATE TABLE {cls.__DB}.params_main"]
+                      f"TRUNCATE TABLE {cls.__DB}.params_main",
+                      f"TRUNCATE TABLE {cls.__DB}.process_orders"]
 
         if values_also:
             statements.append(f"TRUNCATE TABLE {cls.__DB}.params_values")

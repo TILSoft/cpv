@@ -22,7 +22,7 @@ format_param_list = ""
 format_wo_list = ""
 if REDO_EVERYTHING:
     USE_ARCH_DB = True
-    db.truncate_tables()
+    #db.truncate_tables()
     excel_upload()
 
 # %%
@@ -48,15 +48,20 @@ db.save_last_extraction_time(newest_inputdate)
 # Filter to include only required parameters
 df_param_main_values = df_params.loc[df_params["PARAMETERCODE"].isin(df_param_list_main["parameter"])]
 df_param_special = df_params.loc[df_params["PARAMETERCODE"].isin(df_param_list_special["parameter"])]
+del df_params
+
 
 # %%
 # Get process orders
 df_orders = xfp.get_orders(USE_ARCH_DB)
 
 # %%
-# Get tasks
+# Format wo list
 if not df_param_special.empty:
     format_wo_list = format_params_list(df_param_special["MANCODE"])
+# %%
+# Get tasks
+if not df_param_special.empty:
     df_tasks_a = xfp.get_tasks(format_wo_list, USE_ARCH_DB)
     # for self merging later to get the parrent emi
     df_tasks_b = df_tasks_a
@@ -82,9 +87,15 @@ if not df_param_special.empty:
                              right_on=["MANCODE", "MANINDEX", "TASKID"])
     df_tasks_self.rename(columns={"PFCCODE_x": "SUBEMI", "PFCCODE_y": "PARENTEMI",
                                   "TITLE_y": "SUBEMI_TITLE"}, inplace=True)
+
+
+
+# %%
+if not df_param_special.empty:
     df_param_special = pd.merge(df_tasks_self, df_param_special,
                                 left_on=["MANCODE", "ELEMENTID_x", "BATCHID_x", "TASKID_y"],
                                 right_on=["MANCODE", "OPERATIONNUMBER", "BATCHID", "BATCHID"])
+
     # cleanup
     del df_tasks_self, df_tasks_a, df_tasks_b
     df_param_special.drop(["MANINDEX", "TASKID_x", "BATCHID_x",
@@ -110,17 +121,19 @@ if not df_param_special.empty:
 
 # %%
 # Filter out indexes smaller than max input index
+
 if not df_param_special.empty:
     df_param_special = df_param_special.loc[df_param_special.groupby(
         ["MANCODE", "EMI_MASTER",
          "PARENTEMI", "SUBEMI",
-         "BATCHID", "PARAMETERCODE"])["INPUTINDEX"].idxmax()]
+         "BATCHID", "PARAMETERCODE", "description"])["INPUTINDEX"].idxmax()]
+
 
 # %%
 # Calculate agg values
 if not df_param_special.empty:
     df_param_special["VALUE"] = pd.to_numeric( \
-        df_param_special["VALUE"], errors='coerce', downcast='float')
+        df_param_special["VALUE"], errors='coerce')
     grouped = df_param_special.groupby(["MANCODE", "family", "area", "description", "agg_function", "dataformat", "groupid"])
     df_param_special = grouped.agg({'VALUE': ['min', 'max', 'mean'], "INPUTDATE": 'max'}).reset_index()
     df_param_special.columns = ["MANCODE", "family", "area", "description",
@@ -134,9 +147,10 @@ if not df_param_special.empty:
     df_param_special["VALUE"] = df_param_special["VALUE"].round(2)
 
 # %%
-# Save special parameter to the database
+# Save special parameters to the database
 if not df_param_special.empty:
-    db.update_params_values(df_param_special)
+   db.update_params_values(df_param_special)
+   db.update_process_orders(df_orders.loc[df_orders["PO"].isin(df_param_special["MANCODE"])])
 
 # %%
 # join with the po table,
@@ -161,6 +175,7 @@ df_param_main_values = df_param_main_values.loc[df_param_main_values.groupby(
 # %%
 # update db
 db.update_params_values(df_param_main_values)
+db.update_process_orders(df_orders.loc[df_orders["PO"].isin(df_param_main_values["MANCODE"])])
 
 # %%
 # summary

@@ -19,9 +19,8 @@ def format_params_list(column, df_special=None):
             params = params[:-1]
             list1000.append(params)
             params = ""
-    if column.size <= 1000:
-        params = params[:-1]
-        list1000.append(params)
+    params = params[:-1]
+    list1000.append(params)
     return list1000
 
 def create_sql_snippet(keyword, prefix, values):
@@ -41,3 +40,6 @@ def trim_all_columns(dataframe):
     def trim(value):
         return value.strip() if isinstance(value, str) else value
     return dataframe.applymap(trim)
+
+
+#%%
