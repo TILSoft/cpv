@@ -22,7 +22,7 @@ format_param_list = ""
 format_wo_list = ""
 if REDO_EVERYTHING:
     USE_ARCH_DB = True
-    #db.truncate_tables()
+    db.truncate_tables()
     excel_upload()
 
 # %%
