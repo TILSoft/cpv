@@ -1,9 +1,12 @@
 # """Main file to be executed"""
 # pylint: disable=invalid-name
-# %%
 
+# %%
+# Imports
 from timeit import default_timer as timer
+from distutils.util import strtobool
 import pandas as pd
+import os
 from xfp import Xfp as xfp
 from database import DataBase as db
 from helpers import format_params_list
@@ -12,15 +15,17 @@ pd.options.display.max_columns = None
 
 # %%
 # initialization
+__REDO_EVERYTHING = bool(strtobool(os.environ['REDO_EVERYTHING']))
+USE_ARCH_DB = bool(strtobool(os.environ['USE_ARCH_DB']))
 start1 = timer()
 LAST_EXTRACTION = db.get_last_extraction_time()
 #LAST_EXTRACTION = "2019-07-04 09:00:00"
-USE_ARCH_DB = False
-# Means reread all params data, purge table and pulll ALL the parameters
-REDO_EVERYTHING = True
 format_param_list = ""
 format_wo_list = ""
-if REDO_EVERYTHING:
+
+# %%
+# Redo?
+if __REDO_EVERYTHING:
     USE_ARCH_DB = True
     db.truncate_tables()
     excel_upload()
@@ -36,10 +41,10 @@ df_param_list_column = pd.concat([df_param_list_main["parameter"],
 format_param_list = format_params_list(df_param_list_column)
 
 # %%
-# extract all parameters
+# Extract all parameters
 start = timer()
 df_params = xfp.get_parameters(format_param_list, format_wo_list, LAST_EXTRACTION,
-                               REDO_EVERYTHING, USE_ARCH_DB)
+                               __REDO_EVERYTHING, USE_ARCH_DB)
 newest_inputdate = xfp.get_newest_inputdate(df_params)
 db.save_last_extraction_time(newest_inputdate)
 
@@ -68,11 +73,11 @@ if not df_param_special.empty:
 
 # %%
 # Get all special parameters to recalculate agg functions
-if (not REDO_EVERYTHING) and (not df_param_special.empty):
+if (not __REDO_EVERYTHING) and (not df_param_special.empty):
     format_param_list = format_params_list(df_param_special["PARAMETERCODE"], df_param_list_special)
     df_param_special = xfp.get_parameters(
         format_param_list, format_wo_list, LAST_EXTRACTION,
-        REDO_EVERYTHING, USE_ARCH_DB)
+        __REDO_EVERYTHING, USE_ARCH_DB)
 
 # %%
 # Extraction duration
@@ -80,7 +85,7 @@ end = timer()
 print("Parameters extraction duration= " + str((end - start) / 60) + " min")
 
 # %%
-# Merge special with tasks to filter based on the task name
+# Self join tasks to get parent EMI
 if not df_param_special.empty:
     df_tasks_self = pd.merge(df_tasks_a, df_tasks_b,
                              left_on=["MANCODE", "MANINDEX", "BATCHID"],
@@ -88,9 +93,8 @@ if not df_param_special.empty:
     df_tasks_self.rename(columns={"PFCCODE_x": "SUBEMI", "PFCCODE_y": "PARENTEMI",
                                   "TITLE_y": "SUBEMI_TITLE"}, inplace=True)
 
-
-
 # %%
+# Merge special with tasks to filter based on the task name
 if not df_param_special.empty:
     df_param_special = pd.merge(df_tasks_self, df_param_special,
                                 left_on=["MANCODE", "ELEMENTID_x", "BATCHID_x", "TASKID_y"],
@@ -121,13 +125,11 @@ if not df_param_special.empty:
 
 # %%
 # Filter out indexes smaller than max input index
-
 if not df_param_special.empty:
     df_param_special = df_param_special.loc[df_param_special.groupby(
         ["MANCODE", "EMI_MASTER",
          "PARENTEMI", "SUBEMI",
          "BATCHID", "PARAMETERCODE", "description"])["INPUTINDEX"].idxmax()]
-
 
 # %%
 # Calculate agg values
@@ -153,14 +155,14 @@ if not df_param_special.empty:
    db.update_process_orders(df_orders.loc[df_orders["PO"].isin(df_param_special["MANCODE"])])
 
 # %%
-# join with the po table,
+# Join with the po table,
 # mainly to get the master emi to join the param csv file later
 df_param_main_values = pd.merge(df_param_main_values,
                                 df_orders,
                                 left_on="MANCODE", right_on="PO")
 
 # %%
-# join with parameter list to get family name, needed for saving separate files
+# Join with parameter list to get family name, needed for saving separate files
 df_param_main_values = pd.merge(df_param_main_values,
                                 df_param_list_main,
                                 left_on=["PARAMETERCODE", "EMI_MASTER"],
@@ -169,20 +171,19 @@ df_param_main_values = pd.merge(df_param_main_values,
 # %%
 # Filter out indexes smaller than max input index
 df_param_main_values = df_param_main_values.loc[df_param_main_values.groupby(
-    ["MANCODE", "EMI_MASTER", "PARAMETERCODE"])["INPUTINDEX"].idxmax()]
+    ["MANCODE", "EMI_MASTER", "PARAMETERCODE"])["INPUTDATE"].idxmax()]
 
 
 # %%
-# update db
+# Update db
 db.update_params_values(df_param_main_values)
 db.update_process_orders(df_orders.loc[df_orders["PO"].isin(df_param_main_values["MANCODE"])])
 
 # %%
-# summary
+# Summary
 print(f"There are {df_param_main_values.shape[0]} new normal records.")
 print(f"There are {df_param_special.shape[0]} new special records.")
 end1 = timer()
 print(f"Total execution time = {str(round(((end1 - start1) / 60), 2))} min")
-
 
 #%%
