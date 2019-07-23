@@ -10,6 +10,7 @@ from database import DataBase as db
 
 # %%
 # Get all the values
+PATH = os.environ['PATH_APR']
 sql = """SELECT v.PO, v.family, v.area, v.parameter, v.value,
          o.batch, o.material, o.description, o.launch_date
          FROM cpv.params_values v, cpv.process_orders o
@@ -21,9 +22,8 @@ df_params.head()
 
 #%%
 # Save Files
-def save_files():
+def save_files(path_base):
     """Saves  csv files to disk"""
-    path_base = "C:\\IT\\New APR 2"
     products = df_params.loc[:, "family"].unique()
     for product in products:
         df = df_params.loc[df_params['family'] == product]
@@ -44,7 +44,7 @@ def save_files():
 
 
 #%%
-save_files()
+save_files(PATH)
 
 
 #%%

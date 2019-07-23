@@ -122,11 +122,6 @@ class Xfp:
         return trim_all_columns(df_params)
 
     @staticmethod
-    def get_newest_inputdate(dataframe):
-        """Finds the newest date parameter index was created"""
-        return dataframe.loc[:, "INPUTDATE"].max()
-
-    @staticmethod
     def get_tasks(orders, arch_db):
         """Extracts list of EMI tasks to be used in merging with special parameters"""
         orders = create_sql_snippet("and", "mancode", orders)

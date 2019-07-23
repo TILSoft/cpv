@@ -11,7 +11,7 @@ FLUSH PRIVILEGES;
 -- mysql -h localhost -P 3306 --protocol=tcp -u cpv -p
 
 CREATE TABLE `cpv`.`key_values` (
-  `key` VARCHAR(18) NOT NULL,
+  `key` VARCHAR(45) NOT NULL,
   `value` VARCHAR(45) NULL,
   PRIMARY KEY (`key`));
 

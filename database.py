@@ -104,13 +104,13 @@ class DataBase:
         return cls.select(query)
 
     @classmethod
-    def save_last_extraction_time(cls, time):
+    def save_key_value(cls, key, value):
         """Update the last extraction time"""
 
         engine = create_engine('mysql://{}:{}@{}/{}'.format(
             cls.__USERNAME, cls.__PASSWORD, cls.__HOST, cls.__DB))
-        statement = f"""INSERT into cpv.key_values VALUES ('last_extracted', '{time}')
-                            ON DUPLICATE KEY UPDATE value = '{time}';"""
+        statement = f"""INSERT into cpv.key_values VALUES ('{key}', '{value}')
+                            ON DUPLICATE KEY UPDATE value = '{value}';"""
         connection = engine.connect()
         with connection.begin() as transaction:
             try:
@@ -120,11 +120,11 @@ class DataBase:
                 transaction.rollback()
 
     @classmethod
-    def get_last_extraction_time(cls):
+    def get_key_value(cls, key):
         """get the last extraction time"""
 
-        query = "select value FROM cpv.key_values where keyname = \
-                'last_extracted'"
+        query = f"select value FROM cpv.key_values where keyname = \
+                '{key}'"
         return cls.select(query).iloc[0]["value"]
 
     @classmethod

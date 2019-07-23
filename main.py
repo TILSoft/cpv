@@ -3,29 +3,29 @@
 
 # %%
 # Imports
-from timeit import default_timer as timer
-from distutils.util import strtobool
-import pandas as pd
 import os
-from xfp import Xfp as xfp
+from distutils.util import strtobool
+from timeit import default_timer as timer
+import pandas as pd
 from database import DataBase as db
-from helpers import format_params_list
 from db_excel_upload import excel_upload
-pd.options.display.max_columns = None
+from helpers import format_params_list, get_newest_inputdate
+from xfp import Xfp as xfp
 
 # %%
 # initialization
-__REDO_EVERYTHING = bool(strtobool(os.environ['REDO_EVERYTHING']))
+REDO_EVERYTHING = bool(strtobool(os.environ['REDO_EVERYTHING']))
 USE_ARCH_DB = bool(strtobool(os.environ['USE_ARCH_DB']))
+pd.options.display.max_columns = None
 start1 = timer()
-LAST_EXTRACTION = db.get_last_extraction_time()
-#LAST_EXTRACTION = "2019-07-04 09:00:00"
+LAST_EXTRACTION = db.get_key_value("last_XFP_extraction")
+#__LAST_EXTRACTION = "2019-07-04 09:00:00"
 format_param_list = ""
 format_wo_list = ""
 
 # %%
 # Redo?
-if __REDO_EVERYTHING:
+if REDO_EVERYTHING:
     USE_ARCH_DB = True
     db.truncate_tables()
     excel_upload()
@@ -44,9 +44,10 @@ format_param_list = format_params_list(df_param_list_column)
 # Extract all parameters
 start = timer()
 df_params = xfp.get_parameters(format_param_list, format_wo_list, LAST_EXTRACTION,
-                               __REDO_EVERYTHING, USE_ARCH_DB)
-newest_inputdate = xfp.get_newest_inputdate(df_params)
-db.save_last_extraction_time(newest_inputdate)
+                               REDO_EVERYTHING, USE_ARCH_DB)
+newest_inputdate = get_newest_inputdate(df_params)
+# save last extraction date
+db.save_key_value("last_XFP_extraction", newest_inputdate)
 
 # %%
 # Prep parameters dataframes
@@ -73,11 +74,11 @@ if not df_param_special.empty:
 
 # %%
 # Get all special parameters to recalculate agg functions
-if (not __REDO_EVERYTHING) and (not df_param_special.empty):
+if (not REDO_EVERYTHING) and (not df_param_special.empty):
     format_param_list = format_params_list(df_param_special["PARAMETERCODE"], df_param_list_special)
     df_param_special = xfp.get_parameters(
         format_param_list, format_wo_list, LAST_EXTRACTION,
-        __REDO_EVERYTHING, USE_ARCH_DB)
+        REDO_EVERYTHING, USE_ARCH_DB)
 
 # %%
 # Extraction duration
@@ -169,7 +170,8 @@ df_param_main_values = pd.merge(df_param_main_values,
                                 right_on=["parameter", "emi_master"])
 
 # %%
-# Filter out indexes smaller than max input index
+# Filter out indexes smaller than max input index,
+# INPUTDATE as not grouping by batchid
 df_param_main_values = df_param_main_values.loc[df_param_main_values.groupby(
     ["MANCODE", "EMI_MASTER", "PARAMETERCODE"])["INPUTDATE"].idxmax()]
 

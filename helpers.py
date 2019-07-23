@@ -41,5 +41,17 @@ def trim_all_columns(dataframe):
         return value.strip() if isinstance(value, str) else value
     return dataframe.applymap(trim)
 
+def get_newest_inputdate(dataframe):
+    """Finds the newest date parameter index was created"""
+    return dataframe.loc[:, "INPUTDATE"].max()
+
+def to_date(textdate):
+    """Convert string to a data"""
+    from datetime import datetime
+
+    datetime_object = datetime.strptime(
+        textdate, "%Y-%m-%d %H:%M:%S")
+    return datetime_object
+
 
 #%%
