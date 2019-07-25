@@ -11,7 +11,7 @@
     host package unixodbc-dev is needed for "pipenv install pyodbc"
 
 ## MySQL
-    it needs libmysqlclient-dev on the host for sqlalchemy to work
+    it needs libmysqlclient-dev and python3-dev on the host for sqlalchemy to work
 
 ## Jupyter
     due to bug https://github.com/jupyter/notebook/issues/4399, install tornado==5.1.1
