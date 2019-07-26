@@ -136,7 +136,7 @@ class DataBase:
                                                   cls.__DB_XFP_SID)
             connection = cx_Oracle.connect(cls.__USERNAME_XFP,
                                            cls.__PASSWORD_XFP,
-                                           connection_string)
+                                           connection_string, encoding="UTF-8", nencoding="UTF-8")
             dataframe = pd.read_sql(query, connection)
         except Exception as e:
             print(e)

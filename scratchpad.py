@@ -25,7 +25,7 @@ def get_parameters(params, wos, time, redo, arch_db):
     orders = ""
     date_txt = f"""and inputdate >= TO_DATE('{time}',
                     'yyyy-mm-dd hh24:mi:ss')"""
-    params = create_sql_snippet("where", "parametercode", params)
+    params = f"where parametercode in ({params}) "
 
     if wos:
         orders = create_sql_snippet("and", "mancode", wos)
@@ -96,7 +96,7 @@ def get_parameters(params, wos, time, redo, arch_db):
 # %%
 # get list of all parameters to be extracted from XFP formated for SQL
 #format_param_list = ["'TIL_CF_DRY_T°C', 'TILE_SAMPLED_QTY'"]
-format_param_list = ["'TIL_CF_DRY_T\xb0C', 'TILE_SAMPLED_QTY'"]
+format_param_list = "'TIL_CF_DRY_T\xb0C', 'TILE_SAMPLED_QTY'"
 
 format_wo_list = ["'0220960565'"]
 
