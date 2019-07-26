@@ -81,7 +81,6 @@ class Xfp:
                                 {params}
                                 {date_txt}
                                 """
-        print(sql_params_prd)
         df_prd = db.xfp_run_sql(sql_params_prd)
 
         if arch_db:
