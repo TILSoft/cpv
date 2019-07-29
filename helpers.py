@@ -17,12 +17,10 @@ def format_params_list(column, df_special=None):
         params = params + "'" + row + "',"
         if (column.size > 1000) and (counter % 1000 == 0):
             params = params[:-1]
-            # latin-1 to avoid getting character xc2 when utf-8
-            # cauing issues with database sql queries
-            list1000.append(params.encode("latin1"))
+            list1000.append(params)
             params = ""
     params = params[:-1]
-    list1000.append(params.encode("latin1"))
+    list1000.append(params)
     return list1000
 
 def create_sql_snippet(keyword, prefix, values):

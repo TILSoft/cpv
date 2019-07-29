@@ -96,7 +96,7 @@ def get_parameters(params, wos, time, redo, arch_db):
 # %%
 # get list of all parameters to be extracted from XFP formated for SQL
 #format_param_list = ["'TIL_CF_DRY_T°C', 'TILE_SAMPLED_QTY'"]
-format_param_list = "'TIL_CF_DRY_T\xc2\xb0C', 'TILE_SAMPLED_QTY'"
+format_param_list = "'TIL_CF_DRY_T°C', 'TILE_SAMPLED_QTY'"
 format_wo_list = ["'0220960565'"]
 
 # %%
