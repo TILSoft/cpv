@@ -4,6 +4,7 @@
 # %%
 # Imports
 import os
+import datetime
 from distutils.util import strtobool
 from timeit import default_timer as timer
 import pandas as pd
@@ -52,8 +53,10 @@ db.save_key_value("last_XFP_extraction", newest_inputdate)
 # %%
 # Prep parameters dataframes
 # Filter to include only required parameters
-df_param_main_values = df_params.loc[df_params["PARAMETERCODE"].isin(df_param_list_main["parameter"])]
-df_param_special = df_params.loc[df_params["PARAMETERCODE"].isin(df_param_list_special["parameter"])]
+df_param_main_values = df_params.loc[df_params["PARAMETERCODE"].isin(
+    df_param_list_main["parameter"])]
+df_param_special = df_params.loc[df_params["PARAMETERCODE"].isin(
+    df_param_list_special["parameter"])]
 del df_params
 
 
@@ -152,8 +155,8 @@ if not df_param_special.empty:
 # %%
 # Save special parameters to the database
 if not df_param_special.empty:
-   db.update_params_values(df_param_special)
-   db.update_process_orders(df_orders.loc[df_orders["PO"].isin(df_param_special["MANCODE"])])
+    db.update_params_values(df_param_special)
+    db.update_process_orders(df_orders.loc[df_orders["PO"].isin(df_param_special["MANCODE"])])
 
 # %%
 # Join with the po table,
@@ -183,9 +186,16 @@ db.update_process_orders(df_orders.loc[df_orders["PO"].isin(df_param_main_values
 
 # %%
 # Summary
+currentDT = datetime.datetime.now()
 print(f"There are {df_param_main_values.shape[0]} new normal records.")
 print(f"There are {df_param_special.shape[0]} new special records.")
 end1 = timer()
 print(f"Total execution time = {str(round(((end1 - start1) / 60), 2))} min")
-
+with open("log.txt", "a+") as text_file:
+    print(
+        currentDT.strftime("%Y-%m-%d %H:%M:%S") +
+        f" - {df_param_main_values.shape[0]} new normal records, " +
+        f"{df_param_special.shape[0]} new special records. Total time: " +
+        f"{str(round(((end1 - start1) / 60), 2))} min",
+        file=text_file)
 #%%
