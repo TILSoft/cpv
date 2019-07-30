@@ -92,6 +92,10 @@ class Xfp:
         else:
             df_params = df_prd.drop_duplicates().reset_index(drop=True)
 
+        # Exit early if df is empty
+        if df_params.empty:
+            return df_params
+
         # for some reason there are some strange dates in the database
         df_params.drop(df_params.loc[(df_params["DATATYPE"] == 2) &
                                      (df_params["DATEVALUE"]

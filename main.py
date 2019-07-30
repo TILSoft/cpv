@@ -46,7 +46,8 @@ format_param_list = format_params_list(df_param_list_column)
 start = timer()
 df_params = xfp.get_parameters(format_param_list, format_wo_list, LAST_EXTRACTION,
                                REDO_EVERYTHING, USE_ARCH_DB)
-newest_inputdate = get_newest_inputdate(df_params)
+#newest_inputdate = get_newest_inputdate(df_params)
+newest_inputdate = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 # save last extraction date
 db.save_key_value("last_XFP_extraction", newest_inputdate)
 
