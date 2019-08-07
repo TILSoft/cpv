@@ -1,15 +1,42 @@
 """Select queries on the XFP database"""
 # %%
 import pandas as pd
+import datetime
 from database import DataBase as db
 from helpers import trim_all_columns
 from helpers import create_sql_snippet
 
 # %%
-
-
 class Xfp:
     """Select queries on the XFP database"""
+
+    @staticmethod
+    def get_html(sql_text, arch_db):
+        """Extracts content of EMI tasks to use to extract parameters ranges"""
+        print("Extracting html from PROD")
+        sql_prd = f"""select codefab as mancode, batchid,
+                        numoperation as OPERATIONNUMBER,
+                        texte as html
+                        from elan2406prd.e2s_pitext_man
+                        where {sql_text}"""
+        df_prd = db.xfp_run_sql(sql_prd)
+        if arch_db:
+            print(f"Extracting html from ARCHIVE - {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+            sql_arch = f"""select codefab as mancode, batchid,
+                numoperation as OPERATIONNUMBER,
+                texte as html
+                from arch2406prd.e2s_pitext_man
+                where {sql_text}"""
+            df_arch = db.xfp_run_sql(sql_arch)
+            print(f"Joining html PROOD and ARCHIVE - {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+            df_tasks = pd.concat([df_prd, df_arch],
+                                ignore_index=True,
+                                sort=False) \
+                .drop_duplicates().reset_index(drop=True)
+        else:
+            df_tasks = df_prd.drop_duplicates().reset_index(drop=True)
+        return df_tasks
+
 
     @staticmethod
     def get_orders(arch_db=True):
@@ -25,20 +52,20 @@ class Xfp:
                         from ELAN2406PRD.xfp_ofentete o
                         where o.indiceof = 0 and o.etat in ('F', 'S', 'E')
                         """
-        sql_po_arch = """select o.numof as po, o.codeproduit as material,
-                        o.numlotpharma as batch,
-                        o.designationproduit as description,
-                        o.dtdatecreaparsyst as po_launchdate,
-                        o.codemo as emi_master,
-                        o.quantiteof as order_qty,
-                        o.uniteof as unit
-                        from arch2406PRD.xfp_ofentete o
-                        where o.indiceof = 0 and o.etat in ('F', 'S', 'E')
-                        """
 
         df_po_prd = db.xfp_run_sql(sql_po_prd)
 
         if arch_db:
+            sql_po_arch = """select o.numof as po, o.codeproduit as material,
+                o.numlotpharma as batch,
+                o.designationproduit as description,
+                o.dtdatecreaparsyst as po_launchdate,
+                o.codemo as emi_master,
+                o.quantiteof as order_qty,
+                o.uniteof as unit
+                from arch2406PRD.xfp_ofentete o
+                where o.indiceof = 0 and o.etat in ('F', 'S', 'E')
+                """
             df_po_arch = db.xfp_run_sql(sql_po_arch)
             df_po = pd.concat([df_po_prd, df_po_arch],
                               ignore_index=True,
@@ -55,7 +82,7 @@ class Xfp:
         orders = ""
         date_txt = f"""and inputdate >= TO_DATE('{time}',
                       'yyyy-mm-dd hh24:mi:ss')"""
-        params = create_sql_snippet("where", "parametercode", params)
+        params = create_sql_snippet("and", "parametercode", params)
 
         if wos:
             orders = create_sql_snippet("and", "mancode", wos)
@@ -63,27 +90,28 @@ class Xfp:
             date_txt = ""
         sql_params_prd = f"""select picode as picode, mancode, batchid,
                                 parametercode as parametercode, inputindex,
-                                inputdate, operationnumber, datatype,
+                                inputdate, operationnumber, tagnumber, datatype,
                                 numvalue, datevalue,
-                                dbms_lob.substr(textvalue,4000,1) as textvalue
+                                textvalue as textvalue
                                 from ELAN2406PRD.e2s_pidata_man
+                                where tagnumber <> 0 --filter out output parameters
                                 {params}
                                 {orders}
-                                {date_txt}
-                                """
-
-        sql_params_arch = f"""select picode as picode, mancode, batchid,
-                                parametercode as parametercode, inputindex,
-                                inputdate, operationnumber, datatype,
-                                numvalue, datevalue,
-                                dbms_lob.substr(textvalue,4000,1) as textvalue
-                                from arch2406PRD.e2s_pidata_man
-                                {params}
                                 {date_txt}
                                 """
         df_prd = db.xfp_run_sql(sql_params_prd)
 
         if arch_db:
+            sql_params_arch = f"""select picode as picode, mancode, batchid,
+                        parametercode as parametercode, inputindex,
+                        inputdate, operationnumber, tagnumber, datatype,
+                        numvalue, datevalue,
+                        textvalue as textvalue
+                        from arch2406PRD.e2s_pidata_man
+                        where tagnumber <> 0 --filter out output parameters
+                        {params}
+                        {date_txt}
+                        """
             df_arch = db.xfp_run_sql(sql_params_arch)
             df_params = pd.concat([df_prd, df_arch],
                                   ignore_index=True,
@@ -133,12 +161,12 @@ class Xfp:
                     pfccode, title from elan2406prd.e2s_pfc_task_man
                         where status <> 6
                         {orders}"""
-        sql_arch = f"""select mancode, manindex, taskid, batchid, elementid,
-                    pfccode, title from arch2406prd.e2s_pfc_task_man
-                        where status <> 6
-                        {orders}"""
         df_prd = db.xfp_run_sql(sql_prd)
         if arch_db:
+            sql_arch = f"""select mancode, manindex, taskid, batchid, elementid,
+            pfccode, title from arch2406prd.e2s_pfc_task_man
+                where status <> 6
+                {orders}"""
             df_arch = db.xfp_run_sql(sql_arch)
             df_tasks = pd.concat([df_prd, df_arch],
                                  ignore_index=True,

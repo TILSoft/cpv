@@ -6,6 +6,7 @@
 !.pylintrc
 *.pyc
 *.pyo
+Pipfile.lock
 tempCodeRunner*
 /testdata/*
 **/instantclient_11_2/
