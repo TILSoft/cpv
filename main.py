@@ -43,7 +43,7 @@ format_param_list = format_params_list(df_param_list_column)
 
 # %%
 # Get current UTC time
-extraction_time = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+extraction_time = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
 
 # %%
 # Extract all parameters
