@@ -12,6 +12,7 @@ pyodbc = "*"
 xlrd = "*"
 mysqlclient = "*"
 openpyxl = "*"
+pytz = "*"
 
 [requires]
 python_version = "3.6"

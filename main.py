@@ -42,8 +42,11 @@ df_param_list_column = pd.concat([df_param_list_main["parameter"],
 format_param_list = format_params_list(df_param_list_column)
 
 # %%
+# Get current UTC time
+extraction_time = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+
+# %%
 # Extract all parameters
-extraction_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 start = timer()
 df_params = xfp.get_parameters(format_param_list, format_wo_list, LAST_EXTRACTION,
                                REDO_EVERYTHING, USE_ARCH_DB)
