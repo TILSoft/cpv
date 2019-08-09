@@ -159,10 +159,11 @@ class DataBase:
             dataframe = pd.DataFrame(cursor.fetchall(), columns=col_names)
         except Exception as e:
             print(e)
+            print(query)
             raise
+            sys.exit(1)
         finally:
             connection.close()
-            sys.exit(1)
         return trim_all_columns(dataframe)
 
     @classmethod

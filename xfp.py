@@ -16,19 +16,19 @@ class Xfp:
         print("Extracting html from PROD")
         sql_prd = f"""select codefab as mancode, batchid,
                         numoperation as OPERATIONNUMBER,
+                        inputindex,
                         texte as html
                         from elan2406prd.e2s_pitext_man
                         where {sql_text}"""
         df_prd = db.xfp_run_sql(sql_prd)
         if arch_db:
-            print(f"Extracting html from ARCHIVE - {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
             sql_arch = f"""select codefab as mancode, batchid,
                 numoperation as OPERATIONNUMBER,
+                inputindex,
                 texte as html
                 from arch2406prd.e2s_pitext_man
                 where {sql_text}"""
             df_arch = db.xfp_run_sql(sql_arch)
-            print(f"Joining html PROOD and ARCHIVE - {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
             df_tasks = pd.concat([df_prd, df_arch],
                                 ignore_index=True,
                                 sort=False) \
@@ -92,9 +92,11 @@ class Xfp:
                                 parametercode as parametercode, inputindex,
                                 inputdate, operationnumber, tagnumber, datatype,
                                 numvalue, datevalue,
-                                textvalue as textvalue
+                                textvalue as textvalue,
+                                browsingindex
                                 from ELAN2406PRD.e2s_pidata_man
                                 where tagnumber <> 0 --filter out output parameters
+                                and forced = 0
                                 {params}
                                 {orders}
                                 {date_txt}
@@ -106,9 +108,11 @@ class Xfp:
                         parametercode as parametercode, inputindex,
                         inputdate, operationnumber, tagnumber, datatype,
                         numvalue, datevalue,
-                        textvalue as textvalue
+                        textvalue as textvalue,
+                        browsingindex
                         from arch2406PRD.e2s_pidata_man
                         where tagnumber <> 0 --filter out output parameters
+                        and forced = 0
                         {params}
                         {date_txt}
                         """

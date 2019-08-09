@@ -47,7 +47,7 @@ del df_param_list_column
 # Extract all parameters
 extraction_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 start = timer()
-df_params = xfp.get_parameters(format_param_list, format_wo_list, LAST_EXTRACTION, \
+df_params = xfp.get_parameters(format_param_list, format_wo_list, LAST_EXTRACTION,
                                REDO_EVERYTHING, USE_ARCH_DB)
 
 # %%
@@ -80,7 +80,7 @@ if not df_param_special.empty:
 if (not REDO_EVERYTHING) and (not df_param_special.empty):
     format_param_list = format_params_list(df_param_special["PARAMETERCODE"], df_param_list_special)
     df_param_special = xfp.get_parameters(
-        format_param_list, format_wo_list, LAST_EXTRACTION, \
+        format_param_list, format_wo_list, LAST_EXTRACTION,
         REDO_EVERYTHING, USE_ARCH_DB)
 
 # %%
@@ -94,7 +94,7 @@ if not df_param_special.empty:
     df_tasks_self = pd.merge(df_tasks_a, df_tasks_b,
                              left_on=["MANCODE", "MANINDEX", "BATCHID"],
                              right_on=["MANCODE", "MANINDEX", "TASKID"])
-    df_tasks_self.rename(columns={"PFCCODE_x": "SUBEMI", "PFCCODE_y": "PARENTEMI", \
+    df_tasks_self.rename(columns={"PFCCODE_x": "SUBEMI", "PFCCODE_y": "PARENTEMI",
                                   "TITLE_y": "SUBEMI_TITLE"}, inplace=True)
     # cleanup
     del df_tasks_a, df_tasks_b
@@ -108,10 +108,10 @@ if not df_param_special.empty:
 
     # cleanup
     del df_tasks_self
-    df_param_special.drop(["MANINDEX", "TASKID_x", "BATCHID_x", \
-                           "ELEMENTID_x", "TITLE_x", "TASKID_y", \
-                           "BATCHID_y", "ELEMENTID_y", "PICODE", \
-                           "NUMVALUE", "DATEVALUE", "TEXTVALUE"], \
+    df_param_special.drop(["MANINDEX", "TASKID_x", "BATCHID_x",
+                           "ELEMENTID_x", "TITLE_x", "TASKID_y",
+                           "BATCHID_y", "ELEMENTID_y", "PICODE",
+                           "NUMVALUE", "DATEVALUE", "TEXTVALUE"],
                           axis=1, inplace=True)
 
 # %%
@@ -119,13 +119,13 @@ if not df_param_special.empty:
 if not df_param_special.empty:
     df_param_special = pd.merge(df_param_special, df_orders,
                                 left_on="MANCODE", right_on="PO")
-    df_param_special = pd.merge(df_param_special, df_param_list_special, \
-                                left_on=["EMI_MASTER", "PARENTEMI", \
-                                         "SUBEMI", "PARAMETERCODE"], \
-                                right_on=["emi_master", "emi_parent", \
+    df_param_special = pd.merge(df_param_special, df_param_list_special,
+                                left_on=["EMI_MASTER", "PARENTEMI",
+                                         "SUBEMI", "PARAMETERCODE"],
+                                right_on=["emi_master", "emi_parent",
                                           "emi_sub", "parameter"])
-    df_param_special.drop(["PO", "emi_master", "emi_parent", \
-                           "emi_sub", "parameter", "subemi_name"], \
+    df_param_special.drop(["PO", "emi_master", "emi_parent",
+                           "emi_sub", "parameter", "subemi_name"],
                           axis=1, inplace=True)
     del df_param_list_special
 
@@ -133,40 +133,29 @@ if not df_param_special.empty:
 # Filter out indexes smaller than max input index
 if not df_param_special.empty:
     df_param_special = df_param_special.loc[df_param_special.groupby(
-        ["MANCODE", "EMI_MASTER", \
-         "PARENTEMI", "SUBEMI", \
+        ["MANCODE", "EMI_MASTER", "PARENTEMI", "SUBEMI",
          "BATCHID", "PARAMETERCODE", "description"])["INPUTINDEX"].idxmax()]
 
 # %%
 # Get ranges for special parameters
 if not df_param_special.empty:
     df_param_special = Ranges.add_ranges(df_param_special, USE_ARCH_DB)
-    # df_param_special_ranges = Ranges.add_ranges(
-    #     df_param_special.loc[:, ["MANCODE", "BATCHID", "OPERATIONNUMBER",
-    #                             "TAGNUMBER", "family", "area",
-    #                             "description"]].drop_duplicates(), USE_ARCH_DB)
-    # becouse special parameters are grouped there cant be 1:1 reletionship with ranges,
-    # which have to be grouped as well to match df_param_special
-    # grouped = df_param_special_ranges.groupby(["MANCODE", "family", "area", "description"])
-    # df_param_special_ranges = grouped.agg(
-    #     {'value_min': 'max', "value_max": 'max',
-    #     "tolerance_min": 'max',
-    #     "tolerance_max": 'max'}).reset_index()
 
 # %%
 # Calculate agg values
 if not df_param_special.empty:
-    df_param_special["VALUE"] = pd.to_numeric( \
+    df_param_special["VALUE"] = pd.to_numeric(
         df_param_special["VALUE"], errors='coerce')
-    grouped = df_param_special.groupby(["MANCODE", "family", "area", "description", \
+    grouped = df_param_special.groupby(["MANCODE", "family", "area", "description",
                                         "agg_function", "dataformat", "groupid"])
-    df_param_special = grouped.agg({'VALUE': ['min', 'max', 'mean'], \
-                                    "INPUTDATE": 'max', 'value_min': 'max', "value_max": 'max', \
-                                    "tolerance_min": 'max', \
+    df_param_special = grouped.agg({'VALUE': ['min', 'max', 'mean'],
+                                    "INPUTDATE": 'max', 'value_min': 'max', "value_max": 'max',
+                                    "tolerance_min": 'max',
                                     "tolerance_max": 'max'}).reset_index()
-    df_param_special.columns = ["MANCODE", "family", "area", "description", \
-                                "agg_function", "dataformat", "groupid", \
-                                "MIN", "MAX", "AVG", "INPUTDATE", \
+    del grouped # not needed anymore
+    df_param_special.columns = ["MANCODE", "family", "area", "description",
+                                "agg_function", "dataformat", "groupid",
+                                "MIN", "MAX", "AVG", "INPUTDATE",
                                 "value_min", "value_max", "tolerance_min", "tolerance_max"]
     # select the actual VALUE
     df_param_special["VALUE"] = df_param_special["MIN"]
@@ -176,26 +165,19 @@ if not df_param_special.empty:
         df_param_special["AVG"]
     df_param_special["VALUE"] = df_param_special["VALUE"].round(2)
 
-# %%
-# Merge special ranges dfs
-# if not df_param_special.empty:
-#     df_param_special = pd.merge(df_param_special, df_param_special_ranges,
-#                                         on=["MANCODE", "family", "area", "description"])
-#     # not needed anymore
-#     del df_param_special_ranges, grouped
 
 # %%
 # Join with the po table,
 # mainly to get the master emi to join the param csv file later
-df_param_main_values = pd.merge(df_param_main_values, \
-                                df_orders, \
+df_param_main_values = pd.merge(df_param_main_values,
+                                df_orders,
                                 left_on="MANCODE", right_on="PO")
 
 # %%
 # Join with parameter list to get family name, needed for saving separate files
-df_param_main_values = pd.merge(df_param_main_values, \
-                                df_param_list_main, \
-                                left_on=["PARAMETERCODE", "EMI_MASTER"], \
+df_param_main_values = pd.merge(df_param_main_values,
+                                df_param_list_main,
+                                left_on=["PARAMETERCODE", "EMI_MASTER"],
                                 right_on=["parameter", "emi_master"])
 del df_param_list_main
 
@@ -205,8 +187,8 @@ del df_param_list_main
 df_param_main_values.sort_values(
     ["MANCODE", "EMI_MASTER", "PARAMETERCODE", "INPUTDATE", "INPUTINDEX"], ascending=False, inplace=True)
 # INPUTDATE as not grouping by batchid
-df_param_main_values = df_param_main_values.loc[df_param_main_values.groupby(
-    ["MANCODE", "EMI_MASTER", "PARAMETERCODE"])["INPUTDATE"].idxmax()]
+df_param_main_values = df_param_main_values.loc[
+    df_param_main_values.groupby(["MANCODE", "EMI_MASTER", "PARAMETERCODE"])["INPUTDATE"].idxmax()]
 
 # %%
 # Get ranges for normal parameters
