@@ -3,8 +3,7 @@
 import pandas as pd
 import datetime
 from database import DataBase as db
-from helpers import trim_all_columns
-from helpers import create_sql_snippet
+from helpers import trim_all_columns, create_sql_snippet, create_sql_list
 
 # %%
 class Xfp:
@@ -13,13 +12,12 @@ class Xfp:
     @staticmethod
     def get_html(sql_text, arch_db):
         """Extracts content of EMI tasks to use to extract parameters ranges"""
-        print("Extracting html from PROD")
         sql_prd = f"""select codefab as mancode, batchid,
                         numoperation as OPERATIONNUMBER,
                         inputindex,
                         texte as html
                         from elan2406prd.e2s_pitext_man
-                        where {sql_text}"""
+                        {sql_text}"""
         df_prd = db.xfp_run_sql(sql_prd)
         if arch_db:
             sql_arch = f"""select codefab as mancode, batchid,
@@ -27,7 +25,7 @@ class Xfp:
                 inputindex,
                 texte as html
                 from arch2406prd.e2s_pitext_man
-                where {sql_text}"""
+                {sql_text}"""
             df_arch = db.xfp_run_sql(sql_arch)
             df_tasks = pd.concat([df_prd, df_arch],
                                 ignore_index=True,
@@ -76,47 +74,47 @@ class Xfp:
         return trim_all_columns(df_po)
 
     @staticmethod
-    def get_parameters(params, wos, time, redo, arch_db):
+    def get_parameters(redo, time=None, params=None, orders=None, df=None):
         """Get parameters from XFP"""
 
-        orders = ""
-        date_txt = f"""and inputdate >= TO_DATE('{time}',
+        # if there is df there realy should be no orders or params
+        sql_text = ""
+        # TODO
+        if df is not None:
+            sql_text = create_sql_snippet("and", ["mancode", "batchid", "parametercode"], df)
+        else:
+            if orders:
+                orders = create_sql_list("and", "mancode", orders)
+                sql_text += orders
+            if params:
+                params = create_sql_list("and", "parametercode", params)
+                sql_text += params
+
+        if time:
+            time = f"""and inputdate >= TO_DATE('{time}',
                       'yyyy-mm-dd hh24:mi:ss')"""
-        params = create_sql_snippet("and", "parametercode", params)
+        else:
+            time = ""
 
-        if wos:
-            orders = create_sql_snippet("and", "mancode", wos)
+        def get_string(db, sql_text, time):
+            return f"""select picode as picode, mancode, batchid,
+                            parametercode as parametercode, inputindex,
+                            inputdate, operationnumber, tagnumber, datatype,
+                            numvalue, datevalue,
+                            textvalue as textvalue,
+                            browsingindex
+                            from {db}.e2s_pidata_man
+                            where tagnumber <> 0 --filter out output parameters
+                            and forced = 0
+                            {sql_text}
+                            {time}"""
+
+        sql_string = get_string("ELAN2406PRD", sql_text, time)
+        df_prd = db.xfp_run_sql(sql_string)
+
         if redo:
-            date_txt = ""
-        sql_params_prd = f"""select picode as picode, mancode, batchid,
-                                parametercode as parametercode, inputindex,
-                                inputdate, operationnumber, tagnumber, datatype,
-                                numvalue, datevalue,
-                                textvalue as textvalue,
-                                browsingindex
-                                from ELAN2406PRD.e2s_pidata_man
-                                where tagnumber <> 0 --filter out output parameters
-                                and forced = 0
-                                {params}
-                                {orders}
-                                {date_txt}
-                                """
-        df_prd = db.xfp_run_sql(sql_params_prd)
-
-        if arch_db:
-            sql_params_arch = f"""select picode as picode, mancode, batchid,
-                        parametercode as parametercode, inputindex,
-                        inputdate, operationnumber, tagnumber, datatype,
-                        numvalue, datevalue,
-                        textvalue as textvalue,
-                        browsingindex
-                        from arch2406PRD.e2s_pidata_man
-                        where tagnumber <> 0 --filter out output parameters
-                        and forced = 0
-                        {params}
-                        {date_txt}
-                        """
-            df_arch = db.xfp_run_sql(sql_params_arch)
+            sql_string = get_string("ARCH2406PRD", sql_text, time)
+            df_arch = db.xfp_run_sql(sql_string)
             df_params = pd.concat([df_prd, df_arch],
                                   ignore_index=True,
                                   sort=False) \
@@ -144,6 +142,7 @@ class Xfp:
 
         # Rounding
         df_params["NUMVALUE"] = df_params["NUMVALUE"].round(2)
+
         # check and save an actual value
         df_params["VALUE"] = df_params["NUMVALUE"]
         df_params.loc[df_params["DATATYPE"] == 0, "VALUE"] = \
@@ -160,12 +159,14 @@ class Xfp:
     @staticmethod
     def get_tasks(orders, arch_db):
         """Extracts list of EMI tasks to be used in merging with special parameters"""
-        orders = create_sql_snippet("and", "mancode", orders)
+        orders = create_sql_list("and", "mancode", orders)
         sql_prd = f"""select mancode, manindex, taskid, batchid, elementid,
                     pfccode, title from elan2406prd.e2s_pfc_task_man
                         where status <> 6
                         {orders}"""
+
         df_prd = db.xfp_run_sql(sql_prd)
+
         if arch_db:
             sql_arch = f"""select mancode, manindex, taskid, batchid, elementid,
             pfccode, title from arch2406prd.e2s_pfc_task_man

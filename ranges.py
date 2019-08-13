@@ -2,38 +2,70 @@
 # pylint: disable=invalid-name
 
 # %%
-import os
-import sys
 import datetime
+import pandas as pd
 from bs4 import BeautifulSoup
+from helpers import create_sql_snippet, is_string_digit
 from xfp import Xfp as xfp
+
 
 # %%
 class Ranges:
     """Extract and add XFP paramaters specs and tolerances"""
 
     @classmethod
-    def create_sql_snippet_html(cls, df):
-        """Create sql text"""
+    def params_to_values(cls, df_main, redo):
+        """Extracts parameters and saves actual values"""
 
-        # # only get EMI html if CMDTEXT is empty
-        # df = df.loc[df["CMDTEXT"].isnull(),  ["MANCODE", "BATCHID",
-        #                 "OPERATIONNUMBER"]].drop_duplicates()
+        # get all spec parameters values
+        df_values = pd.concat([
+            df_main.loc[df_main["value_min"].notna(), ["MANCODE", "BATCHID",
+                                                    "value_min"]].rename(columns={"value_min": "value"}),
+            df_main.loc[df_main["value_max"].notna(), ["MANCODE", "BATCHID",
+                                                    "value_max"]].rename(columns={"value_max": "value"}),
+            df_main.loc[df_main["tolerance_min"].notna(), ["MANCODE", "BATCHID",
+                                                    "tolerance_min"]].rename(columns={"tolerance_min": "value"}),
+            df_main.loc[df_main["tolerance_max"].notna(), ["MANCODE", "BATCHID",
+                                                    "tolerance_max"]].rename(columns={"tolerance_max": "value"})],
+            sort=False).drop_duplicates()
 
-        txt = ""
-        for row in df.itertuples():
-            txt += (f"or (codefab = '{row.MANCODE}' "
-                    f"and batchid = '{row.BATCHID}' "
-                    f"and numoperation = '{row.OPERATIONNUMBER}' "
-                    f"and inputindex = '{row.BROWSINGINDEX}')\n ")
-        return "(" + txt[3:-1] + ")"
+        # drop all but parameter names
+        df_values.dropna(subset=["value"], inplace=True)
+        df_values = df_values.loc[~df_values["value"].apply(is_string_digit)]
+
+        # query xfp db
+        df_values = xfp.get_parameters(redo=redo, df=df_values)
+
+        # take only parameters values entered last in the given batchid
+        df_values = df_values.loc[df_values.groupby(
+            ["MANCODE", "BATCHID", "PARAMETERCODE"])["INPUTINDEX"].idxmax()]
+
+        try:
+            # go thrugh each spec parameter and replace it with an actual value
+            for row in df_main.itertuples():
+                for col in ["value_min", "value_max", "tolerance_min", "tolerance_max"]:
+                    spec_param = df_main.at[row.Index, col]
+                    if (spec_param is not None) and (not is_string_digit(spec_param)):
+                        value = df_values.loc[(df_values["MANCODE"] == row.MANCODE)
+                                            & (df_values["BATCHID"] == row.BATCHID)
+                                            & (df_values["PARAMETERCODE"] == spec_param),
+                                            "VALUE"].iloc[0]
+                        df_main.at[row.Index, col] = value
+        except IndexError as e:
+            print(e)
+            print(row)
+            raise
+        return df_main
+
 
     @classmethod
     def add_ranges(cls, dataframe, arch_db):
-        """Append 2 columns with limits and 2 with tolerances"""
+        """Append columns with limits and tolerances"""
 
-        sql_text = cls.create_sql_snippet_html(dataframe.loc[:, [
-                                               "MANCODE", "BATCHID", "OPERATIONNUMBER", "BROWSINGINDEX"]].drop_duplicates())
+        sql_text = create_sql_snippet(
+            "where", ["codefab", "batchid", "numoperation", "inputindex"],
+            dataframe.loc[:, ["MANCODE", "BATCHID", "OPERATIONNUMBER", "BROWSINGINDEX"]].drop_duplicates())
+
         df_html = xfp.get_html(sql_text, arch_db)
 
         # Adding new columns
@@ -45,9 +77,6 @@ class Ranges:
         try:
             # Extracting and saving (only numeric datatype)
             for row in dataframe.loc[dataframe["DATATYPE"] == 1].itertuples():
-                # if row.CMDTEXT:
-                #     html = row.CMDTEXT
-                # else:
                 html = df_html.loc[(df_html["MANCODE"] == row.MANCODE)
                                 & (df_html["BATCHID"] == row.BATCHID)
                                 & (df_html["OPERATIONNUMBER"] == row.OPERATIONNUMBER)
@@ -63,7 +92,8 @@ class Ranges:
             print(e)
             print(row)
             raise
-            sys.exit(1)
+
+        dataframe = cls.params_to_values(dataframe, arch_db)
         return dataframe
 
     @classmethod
@@ -81,7 +111,6 @@ class Ranges:
             print(e)
             print(row)
             raise
-            sys.exit(1)
 
         try:
             param = soup.find("input", {"id": tagid})
@@ -89,6 +118,7 @@ class Ranges:
             val_max = clean(param.get("val_max"))
             val_tolmin = clean(param.get("val_tolmin"))
             val_tolmax = clean(param.get("val_tolmax"))
+        # do not exit just return nulls
         except (AttributeError, TypeError) as e:
             print(e)
             print(param)

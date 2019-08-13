@@ -22,8 +22,8 @@ pd.options.display.max_columns = None
 start1 = timer()
 LAST_EXTRACTION = db.get_key_value("last_XFP_extraction")
 #__LAST_EXTRACTION = "2019-07-04 09:00:00"
-format_param_list = ""
-format_wo_list = ""
+param_list = ""
+wo_list = ""
 
 # %%
 # Redo?
@@ -40,15 +40,17 @@ df_param_list_column = pd.concat([df_param_list_main["parameter"],
                                   df_param_list_special["parameter"]],
                                  ignore_index=True, sort=False
                                  ).drop_duplicates().reset_index(drop=True)
-format_param_list = format_params_list(df_param_list_column)
+param_list = format_params_list(df_param_list_column)
 del df_param_list_column
 
 # %%
+# Get current UTC time (same as XFP database)
+EXTRACTION_TIME = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+
+# %%
 # Extract all parameters
-extraction_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 start = timer()
-df_params = xfp.get_parameters(format_param_list, format_wo_list, LAST_EXTRACTION,
-                               REDO_EVERYTHING, USE_ARCH_DB)
+df_params = xfp.get_parameters(REDO_EVERYTHING, LAST_EXTRACTION, param_list)
 
 # %%
 # Prep parameters dataframes
@@ -67,21 +69,20 @@ df_orders = xfp.get_orders(USE_ARCH_DB)
 # %%
 # Format wo list
 if not df_param_special.empty:
-    format_wo_list = format_params_list(df_param_special["MANCODE"])
+    wo_list = format_params_list(df_param_special["MANCODE"])
 # %%
 # Get tasks
 if not df_param_special.empty:
-    df_tasks_a = xfp.get_tasks(format_wo_list, USE_ARCH_DB)
+    df_tasks_a = xfp.get_tasks(wo_list, USE_ARCH_DB)
     # for self merging later to get the parrent emi
     df_tasks_b = df_tasks_a
 
 # %%
 # Get all special parameters to recalculate agg functions
 if (not REDO_EVERYTHING) and (not df_param_special.empty):
-    format_param_list = format_params_list(df_param_special["PARAMETERCODE"], df_param_list_special)
-    df_param_special = xfp.get_parameters(
-        format_param_list, format_wo_list, LAST_EXTRACTION,
-        REDO_EVERYTHING, USE_ARCH_DB)
+    param_list = format_params_list(df_param_special["PARAMETERCODE"], df_param_list_special)
+    df_param_special = xfp.get_parameters(REDO_EVERYTHING, LAST_EXTRACTION,
+                                          param_list, wo_list)
 
 # %%
 # Extraction duration
@@ -208,7 +209,7 @@ if not df_param_special.empty:
 
 # %%
 # save last extraction date
-db.save_key_value("last_XFP_extraction", extraction_time)
+db.save_key_value("last_XFP_extraction", EXTRACTION_TIME)
 
 # %%
 # Summary

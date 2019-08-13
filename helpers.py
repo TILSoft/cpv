@@ -2,6 +2,31 @@
 
 # %%
 
+
+def create_sql_snippet(keyword, labels, df):
+    """Create sql text, order of labels and columns must align"""
+
+    txt = ""
+    for row in df.itertuples():
+        txt_temp = ""
+        for i, label in enumerate(labels, start=1):
+            txt_temp += f" and {label} = '{row[i]}'"
+        txt = txt + txt_temp[4:]
+        txt += f")\nor ("
+    return f"{keyword} (({txt[:-5]})"
+
+
+def is_string_digit(value):
+    """
+    Returns True if string is a number.
+    """
+    try:
+        float(value)
+        return True
+    except (ValueError, TypeError):
+        return False
+
+
 def format_params_list(column, df_special=None):
     """
     Format the parameter list for the SQL query,
@@ -10,6 +35,7 @@ def format_params_list(column, df_special=None):
     params = ""
     list1000 = []
     column = column.unique()
+    # need to get all other parameters from the same group
     if df_special is not None:
         groups = df_special.loc[df_special["parameter"].isin(column), "groupid"]
         column = df_special.loc[df_special["groupid"].isin(groups), "parameter"]
@@ -23,7 +49,7 @@ def format_params_list(column, df_special=None):
     list1000.append(params)
     return list1000
 
-def create_sql_snippet(keyword, prefix, values):
+def create_sql_list(keyword, prefix, values):
     """
     Due to Oracle 1000 elemets list limitation,
     any sql list must be divided into smaller pieces
@@ -31,7 +57,7 @@ def create_sql_snippet(keyword, prefix, values):
     txt = ""
     for value in values:
         txt = txt + f"{prefix} in ({value}) or "
-    return keyword + " ( " + txt[:-4] + " ) "
+    return keyword + " (" + txt[:-4] + ")\n"
 
 def trim_all_columns(dataframe):
     """
@@ -46,7 +72,7 @@ def get_newest_inputdate(dataframe):
     return dataframe.loc[:, "INPUTDATE"].max()
 
 def to_date(textdate):
-    """Convert string to a data"""
+    """Convert string to a date"""
     from datetime import datetime
 
     datetime_object = datetime.strptime(

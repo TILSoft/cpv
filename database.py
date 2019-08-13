@@ -157,7 +157,7 @@ class DataBase:
             cursor.execute(query)
             col_names = [row[0] for row in cursor.description]
             dataframe = pd.DataFrame(cursor.fetchall(), columns=col_names)
-        except Exception as e:
+        except cx_Oracle.DatabaseError as e:
             print(e)
             print(query)
             raise
