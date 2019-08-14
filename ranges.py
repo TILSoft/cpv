@@ -46,6 +46,8 @@ class Ranges:
                 for col in ["value_min", "value_max", "tolerance_min", "tolerance_max"]:
                     spec_param = df_main.at[row.Index, col]
                     if (spec_param is not None) and (not is_string_digit(spec_param)):
+                        temp = df_values.loc[(
+                            df_values["MANCODE"] == row.MANCODE)]
                         value = df_values.loc[(df_values["MANCODE"] == row.MANCODE)
                                             & (df_values["BATCHID"] == row.BATCHID)
                                             & (df_values["PARAMETERCODE"] == spec_param),
@@ -54,6 +56,9 @@ class Ranges:
         except IndexError as e:
             print(e)
             print(row)
+            print("spec_param = " + spec_param)
+            print("col = " + col)
+            print(temp)
             raise
         return df_main
 
@@ -82,6 +87,10 @@ class Ranges:
                                 & (df_html["OPERATIONNUMBER"] == row.OPERATIONNUMBER)
                                 & (df_html["INPUTINDEX"] == row.BROWSINGINDEX),
                                 "HTML"].iloc[0]
+
+                # it is null for tasks in progress
+                if not html:
+                    html = xfp.get_html_cmdtext(row)
 
                 values = cls.get_values(html, row.TAGNUMBER, row)
                 dataframe.at[row.Index, "value_min"] = values[0]

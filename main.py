@@ -209,7 +209,7 @@ if not df_param_special.empty:
 
 # %%
 # save last extraction date
-db.save_key_value("last_XFP_extraction", EXTRACTION_TIME)
+#db.save_key_value("last_XFP_extraction", EXTRACTION_TIME)
 
 # %%
 # Summary

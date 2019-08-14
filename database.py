@@ -3,6 +3,7 @@
 # %%
 import os
 import sys
+import codecs
 from sqlalchemy import create_engine
 from sqlalchemy.sql import text
 import pandas as pd
@@ -19,11 +20,21 @@ class DataBase:
     __HOST = os.environ['MYSQL_HOST']
     __USERNAME = os.environ['MYSQL_USERNAME']
     __PASSWORD = os.environ['MYSQL_PASSWORD']
+
+    # __MSDB = os.environ['MSSQL_DB']
+    # __MSPORT = os.environ['MSSQL_PORT']
+    # __MSHOST = os.environ['MSSQL_HOST']
+    # __MSUSERNAME = os.environ['MSSQL_USERNAME']
+    # __MSPASSWORD = os.environ['MSSQL_PASSWORD']
+
     __DB_XFP_SID = os.environ['XFP_DB_SID']
     __DB_XFP_IP = os.environ['XFP_DB_IP']
     __DB_XFP_PORT = os.environ['XFP_DB_PORT']
     __USERNAME_XFP = os.environ['XFP_USERNAME']
     __PASSWORD_XFP = os.environ['XFP_PASSWORD']
+
+    @classmethod
+    def get_engine():
 
     @classmethod
     def update(cls, statement, dataframe):
@@ -155,6 +166,14 @@ class DataBase:
             connection.outputtypehandler = OutputTypeHandler
             cursor = connection.cursor()
             cursor.execute(query)
+
+            # out = sys.stdout
+            # out.write(query)
+
+            with codecs.open('testdata\Failed.txt', 'w', "utf-8") as file:
+                file.write(query)
+
+
             col_names = [row[0] for row in cursor.description]
             dataframe = pd.DataFrame(cursor.fetchall(), columns=col_names)
         except cx_Oracle.DatabaseError as e:

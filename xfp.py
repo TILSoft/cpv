@@ -10,6 +10,32 @@ class Xfp:
     """Select queries on the XFP database"""
 
     @staticmethod
+    def get_html_cmdtext(row):
+        """
+        For EMI tasks the html is saved to e2s_pitext_man only after task is completed
+        so for tasks in progress there is a need no extract spec values from the e2s_pidata_man
+        able. Note it can't be done for all as cmdtext column may be null once task is completed.
+        As this is only for in porogress task no need to query the archive db.
+        """
+        sql = f"""select cmdtext from elan2406prd.e2s_pidata_man where
+                    mancode = '{row.MANCODE}'
+                    and batchid = '{row.BATCHID}'
+                    and parametercode = '{row.PARAMETERCODE}'
+                    and inputindex = '{row.INPUTINDEX}'
+                    and operationnumber = '{row.OPERATIONNUMBER}'
+                    and browsingindex = '{row.BROWSINGINDEX}'
+            """
+        try:
+            return db.xfp_run_sql(sql).iat[0, 0]
+        except IndexError as e:
+            print("Inside of get_html_cmdtext")
+            print(e)
+            print(row)
+            print("\n")
+            return None
+
+
+    @staticmethod
     def get_html(sql_text, arch_db):
         """Extracts content of EMI tasks to use to extract parameters ranges"""
         sql_prd = f"""select codefab as mancode, batchid,
@@ -79,7 +105,6 @@ class Xfp:
 
         # if there is df there realy should be no orders or params
         sql_text = ""
-        # TODO
         if df is not None:
             sql_text = create_sql_snippet("and", ["mancode", "batchid", "parametercode"], df)
         else:
