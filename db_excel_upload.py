@@ -4,10 +4,9 @@
 import os
 import pandas as pd
 from sqlalchemy.sql import text
-from helpers import trim_all_columns
 from database import DataBase as db
 
-__DB = os.environ['MYSQL_DB']
+__DB = os.environ['DB']
 # %%
 
 
@@ -16,17 +15,16 @@ def excel_upload():
 
     db.truncate_tables(False)
 
-    table = f"{__DB}.params_main"
+    table = f"{__DB}.dbo.params_main"
     statement = text(f"""INSERT INTO {table} VALUES (:emi_master,
                     :parameter, :family, :area, :description,
                     :dataformat)
                     """)
 
     dataframe = pd.read_excel('input/params_main.xlsx')
-    dataframe = trim_all_columns(dataframe)
     db.update(statement, dataframe)
 
-    table = f"{__DB}.params_special"
+    table = f"{__DB}.dbo.params_special"
     statement = text(f"""INSERT INTO {table} VALUES (:emi_master,
                     :emi_parent, :emi_sub,
                     :parameter, :subemi_name, :description, :groupid,
@@ -34,5 +32,4 @@ def excel_upload():
                     :agg_function, :dataformat)""")
 
     dataframe = pd.read_excel('input/params_special.xlsx')
-    dataframe = trim_all_columns(dataframe)
     db.update(statement, dataframe)

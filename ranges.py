@@ -4,8 +4,9 @@
 # %%
 import datetime
 import pandas as pd
+import numpy as np
 from bs4 import BeautifulSoup
-from helpers import create_sql_snippet, is_string_digit
+from helpers import create_sql_snippet, is_string_digit, format_params_list
 from xfp import Xfp as xfp
 
 
@@ -17,16 +18,17 @@ class Ranges:
     def params_to_values(cls, df_main, redo):
         """Extracts parameters and saves actual values"""
 
+
         # get all spec parameters values
         df_values = pd.concat([
-            df_main.loc[df_main["value_min"].notna(), ["MANCODE", "BATCHID",
+            df_main.loc[df_main["value_min"].notna(), ["MANCODE",
                                                     "value_min"]].rename(columns={"value_min": "value"}),
-            df_main.loc[df_main["value_max"].notna(), ["MANCODE", "BATCHID",
+            df_main.loc[df_main["value_max"].notna(), ["MANCODE",
                                                     "value_max"]].rename(columns={"value_max": "value"}),
-            df_main.loc[df_main["tolerance_min"].notna(), ["MANCODE", "BATCHID",
-                                                    "tolerance_min"]].rename(columns={"tolerance_min": "value"}),
-            df_main.loc[df_main["tolerance_max"].notna(), ["MANCODE", "BATCHID",
-                                                    "tolerance_max"]].rename(columns={"tolerance_max": "value"})],
+            df_main.loc[df_main["tolerance_min"].notna(), ["MANCODE",
+                                                        "tolerance_min"]].rename(columns={"tolerance_min": "value"}),
+            df_main.loc[df_main["tolerance_max"].notna(), ["MANCODE",
+                                                        "tolerance_max"]].rename(columns={"tolerance_max": "value"})],
             sort=False).drop_duplicates()
 
         # drop all but parameter names
@@ -34,7 +36,9 @@ class Ranges:
         df_values = df_values.loc[~df_values["value"].apply(is_string_digit)]
 
         # query xfp db
-        df_values = xfp.get_parameters(redo=redo, df=df_values)
+        params = format_params_list(df_values["value"])
+        orders = format_params_list(df_values["MANCODE"])
+        df_values = xfp.get_parameters(redo=redo, params=params, orders=orders)
 
         # take only parameters values entered last in the given batchid
         df_values = df_values.loc[df_values.groupby(
@@ -59,7 +63,7 @@ class Ranges:
             print("spec_param = " + spec_param)
             print("col = " + col)
             print(temp)
-            raise
+            #raise
         return df_main
 
 
@@ -67,11 +71,19 @@ class Ranges:
     def add_ranges(cls, dataframe, arch_db):
         """Append columns with limits and tolerances"""
 
-        sql_text = create_sql_snippet(
-            "where", ["codefab", "batchid", "numoperation", "inputindex"],
-            dataframe.loc[:, ["MANCODE", "BATCHID", "OPERATIONNUMBER", "BROWSINGINDEX"]].drop_duplicates())
+        # Have to split dataframe due to oracle query limit
+        split_size = (dataframe.shape[0] // 1000) + 1
+        df_list = np.array_split(dataframe.loc[:, [
+                                 "MANCODE", "BATCHID", "OPERATIONNUMBER", "BROWSINGINDEX"]].drop_duplicates(), split_size)
+        df_html = pd.DataFrame(
+            columns=["MANCODE", "BATCHID", "OPERATIONNUMBER", "INPUTINDEX", "HTML"])
+        for df in df_list:
+            sql_text = create_sql_snippet(
+                "where", ["codefab", "batchid", "numoperation", "inputindex"], df)
 
-        df_html = xfp.get_html(sql_text, arch_db)
+            df_html_temp = xfp.get_html(sql_text, arch_db)
+            df_html = df_html.append(
+                df_html_temp, ignore_index=True, sort=False)
 
         # Adding new columns
         dataframe["value_min"] = None
@@ -91,6 +103,7 @@ class Ranges:
                 # it is null for tasks in progress
                 if not html:
                     html = xfp.get_html_cmdtext(row)
+                    print("HTML is null")
 
                 values = cls.get_values(html, row.TAGNUMBER, row)
                 dataframe.at[row.Index, "value_min"] = values[0]
@@ -105,6 +118,7 @@ class Ranges:
         dataframe = cls.params_to_values(dataframe, arch_db)
         return dataframe
 
+
     @classmethod
     def get_values(cls, html, tagid, row):
         """Extract tolerance html tags"""
@@ -116,12 +130,6 @@ class Ranges:
 
         try:
             soup = BeautifulSoup(html, 'lxml')
-        except TypeError as e:
-            print(e)
-            print(row)
-            raise
-
-        try:
             param = soup.find("input", {"id": tagid})
             val_min = clean(param.get("val_min"))
             val_max = clean(param.get("val_max"))
@@ -130,7 +138,8 @@ class Ranges:
         # do not exit just return nulls
         except (AttributeError, TypeError) as e:
             print(e)
-            print(param)
+            print(tagid)
             print(row)
             return (None, None, None, None)
+
         return (val_tolmin, val_tolmax, val_min, val_max)

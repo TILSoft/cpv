@@ -29,6 +29,7 @@ wo_list = ""
 # Redo?
 if REDO_EVERYTHING:
     USE_ARCH_DB = True
+    LAST_EXTRACTION = None
     db.truncate_tables()
     excel_upload()
 
@@ -50,7 +51,7 @@ EXTRACTION_TIME = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
 # %%
 # Extract all parameters
 start = timer()
-df_params = xfp.get_parameters(REDO_EVERYTHING, LAST_EXTRACTION, param_list)
+df_params = xfp.get_parameters(redo=REDO_EVERYTHING, time=LAST_EXTRACTION, params=param_list)
 
 # %%
 # Prep parameters dataframes
@@ -81,8 +82,8 @@ if not df_param_special.empty:
 # Get all special parameters to recalculate agg functions
 if (not REDO_EVERYTHING) and (not df_param_special.empty):
     param_list = format_params_list(df_param_special["PARAMETERCODE"], df_param_list_special)
-    df_param_special = xfp.get_parameters(REDO_EVERYTHING, LAST_EXTRACTION,
-                                          param_list, wo_list)
+    df_param_special = xfp.get_parameters(redo=REDO_EVERYTHING, time=LAST_EXTRACTION,
+                                          params=param_list, orders=wo_list)
 
 # %%
 # Extraction duration
@@ -197,19 +198,21 @@ df_param_main_values = Ranges.add_ranges(df_param_main_values, USE_ARCH_DB)
 
 # %%
 # Save normal parameters to the database
+df_param_main_values.to_pickle("C:\\IT\\pickles\df_param_main_values.pkl")
 db.update_params_values(df_param_main_values)
 db.update_process_orders(df_orders.loc[df_orders["PO"].isin(df_param_main_values["MANCODE"])])
 
 # %%
 # Save special parameters to the database
 if not df_param_special.empty:
-    db.update_params_values(df_param_special.replace({pd.np.nan: None}))
+    df_param_special = df_param_special.replace({pd.np.nan: None})
+    db.update_params_values(df_param_special)
     db.update_process_orders(
         df_orders.loc[df_orders["PO"].isin(df_param_special["MANCODE"])])
 
 # %%
 # save last extraction date
-#db.save_key_value("last_XFP_extraction", EXTRACTION_TIME)
+db.save_key_value("last_XFP_extraction", EXTRACTION_TIME)
 
 # %%
 # Summary
@@ -227,3 +230,4 @@ with open("log.txt", "a+") as text_file:
         file=text_file)
 
 #%%
+

@@ -10,57 +10,60 @@ FLUSH PRIVILEGES;
 -- if running on docker connect with hostname and port
 -- mysql -h localhost -P 3306 --protocol=tcp -u cpv -p
 
-CREATE TABLE `cpv`.`key_values` (
-  `key` VARCHAR(45) NOT NULL,
-  `value` VARCHAR(45) NULL,
-  PRIMARY KEY (`key`));
+CREATE TABLE `key_values` (
+  `keyname` varchar(45) NOT NULL,
+  `value` varchar(45) DEFAULT NULL,
+  PRIMARY KEY (`keyname`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
+CREATE TABLE `params_main` (
+  `emi_master` varchar(8) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `parameter` varchar(30) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `family` varchar(30) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `area` varchar(12) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `description` varchar(45) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `dataformat` varchar(12) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
+  PRIMARY KEY (`emi_master`,`parameter`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE IF NOT EXISTS `cpv`.`params_main` (
-  `emi_master` VARCHAR(8) NOT NULL,
-  `parameter` VARCHAR(30) NOT NULL,
-  `family` VARCHAR(30) NOT NULL,
-  `area` VARCHAR(12) NOT NULL,
-  `description` VARCHAR(45) NOT NULL,
-  `dataformat` VARCHAR(12) NULL,
-  `range_min` DECIMAL NOT NULL,
-  `range_max` DECIMAL NOT NULL,
-  PRIMARY KEY (`emi_master`, `parameter`));
+CREATE TABLE `params_special` (
+  `emi_master` varchar(8) NOT NULL,
+  `emi_parent` varchar(8) NOT NULL,
+  `emi_sub` varchar(8) NOT NULL,
+  `parameter` varchar(30) NOT NULL,
+  `subemi_name` varchar(30) NOT NULL,
+  `description` varchar(45) NOT NULL,
+  `groupid` int(11) NOT NULL,
+  `area` varchar(12) NOT NULL,
+  `family` varchar(30) NOT NULL,
+  `agg_function` varchar(12) NOT NULL,
+  `dataformat` varchar(12) DEFAULT NULL,
+  PRIMARY KEY (`emi_master`,`emi_parent`,`emi_sub`,`parameter`,`subemi_name`,`description`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
-CREATE TABLE IF NOT EXISTS `cpv`.`params_special` (
-  `emi_master` VARCHAR(8) NOT NULL,
-  `emi_parent` VARCHAR(8) NOT NULL,
-  `emi_sub` VARCHAR(8) NOT NULL,
-  `parameter` VARCHAR(30) NOT NULL,
-  `subemi_name` VARCHAR(30) NOT NULL,
-  `description` VARCHAR(45) NOT NULL,
-  `groupid` INT NOT NULL,
-  `area` VARCHAR(12) NOT NULL,
-  `family` VARCHAR(30) NOT NULL,
-  `agg_function` VARCHAR(12) NOT NULL,
-  `dataformat` VARCHAR(12) NULL,
-  `range_min` DECIMAL NOT NULL,
-  `range_max` DECIMAL NOT NULL,
-  PRIMARY KEY (`emi_master`, `emi_parent`, `emi_sub`, `parameter`, `subemi_name`, `description`));
+CREATE TABLE `params_values` (
+  `PO` varchar(10) NOT NULL,
+  `family` varchar(30) NOT NULL,
+  `area` varchar(12) NOT NULL,
+  `parameter` varchar(64) NOT NULL,
+  `value` varchar(30) NOT NULL,
+  `unit` varchar(16) DEFAULT NULL,
+  `inputdate` datetime NOT NULL,
+  `value_min` varchar(30) DEFAULT NULL,
+  `value_max` varchar(30) DEFAULT NULL,
+  `tolerance_min` varchar(30) DEFAULT NULL,
+  `tolerance_max` varchar(30) DEFAULT NULL,
+  PRIMARY KEY (`PO`,`family`,`area`,`parameter`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
-CREATE TABLE IF NOT EXISTS `cpv`.`params_values` (
-  `PO` VARCHAR(10) NOT NULL,
-  `family` VARCHAR(30) NOT NULL,
-  `area` VARCHAR(12) NOT NULL,
-  `parameter` VARCHAR(64) NOT NULL,
-  `value` VARCHAR(30) NOT NULL,
-  `unit` VARCHAR(16) NULL,
-  `inputdate` DATETIME NOT NULL,
-  `range_min` DECIMAL NOT NULL,
-  `range_max` DECIMAL NOT NULL,
-  PRIMARY KEY (`PO`, `family`, `area`, `parameter`));
+CREATE TABLE `process_orders` (
+  `process_order` varchar(10) NOT NULL,
+  `batch` varchar(12) NOT NULL,
+  `material` varchar(12) NOT NULL,
+  `description` varchar(256) NOT NULL,
+  `launch_date` datetime NOT NULL,
+  `order_quantity` decimal(10,0) NOT NULL,
+  `order_unit` varchar(2) NOT NULL,
+  PRIMARY KEY (`process_order`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
-CREATE TABLE `cpv`.`process_orders` (
-  `process_order` VARCHAR(10) NOT NULL,
-  `batch` VARCHAR(12) NOT NULL,
-  `material` VARCHAR(12) NOT NULL,
-  `description` VARCHAR(256) NOT NULL,
-  `launch_date` DATETIME NOT NULL,
-  `order_quantity` DECIMAL NOT NULL,
-  `order_unit` VARCHAR(2) NOT NULL,
-  PRIMARY KEY (`process_order`));

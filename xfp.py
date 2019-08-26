@@ -1,7 +1,8 @@
 """Select queries on the XFP database"""
 # %%
-import pandas as pd
 import datetime
+import re
+import pandas as pd
 from database import DataBase as db
 from helpers import trim_all_columns, create_sql_snippet, create_sql_list
 
@@ -23,8 +24,7 @@ class Xfp:
                     and parametercode = '{row.PARAMETERCODE}'
                     and inputindex = '{row.INPUTINDEX}'
                     and operationnumber = '{row.OPERATIONNUMBER}'
-                    and browsingindex = '{row.BROWSINGINDEX}'
-            """
+                    and browsingindex = '{row.BROWSINGINDEX}'"""
         try:
             return db.xfp_run_sql(sql).iat[0, 0]
         except IndexError as e:
@@ -38,21 +38,20 @@ class Xfp:
     @staticmethod
     def get_html(sql_text, arch_db):
         """Extracts content of EMI tasks to use to extract parameters ranges"""
-        sql_prd = f"""select codefab as mancode, batchid,
+
+        def get_string(dbname, sql_text):
+            return f"""select codefab as mancode, batchid,
                         numoperation as OPERATIONNUMBER,
                         inputindex,
                         texte as html
-                        from elan2406prd.e2s_pitext_man
+                        from {dbname}.e2s_pitext_man
                         {sql_text}"""
-        df_prd = db.xfp_run_sql(sql_prd)
+
+        sql_string = get_string("ELAN2406PRD", sql_text)
+        df_prd = db.xfp_run_sql(sql_string)
         if arch_db:
-            sql_arch = f"""select codefab as mancode, batchid,
-                numoperation as OPERATIONNUMBER,
-                inputindex,
-                texte as html
-                from arch2406prd.e2s_pitext_man
-                {sql_text}"""
-            df_arch = db.xfp_run_sql(sql_arch)
+            sql_string = get_string("ARCH2406PRD", sql_text)
+            df_arch = db.xfp_run_sql(sql_string)
             df_tasks = pd.concat([df_prd, df_arch],
                                 ignore_index=True,
                                 sort=False) \
@@ -60,6 +59,7 @@ class Xfp:
         else:
             df_tasks = df_prd.drop_duplicates().reset_index(drop=True)
         return df_tasks
+
 
 
     @staticmethod
@@ -97,23 +97,47 @@ class Xfp:
         else:
             df_po = df_po_prd.drop_duplicates().reset_index(drop=True)
 
+        def get_strength(value):
+            """Get product strength from the description"""
+            def clean(value):
+                value = re.sub(r"\s+", "", value)
+                value = re.sub(r"(MG|mg|Mg|gM){1}", "", value)
+                value = re.sub(r"(/|//)", "+", value)
+                value = re.sub(",", ".", value)
+                return value
+            try:
+                strength = re.search(r"(\d*[.,]?\d+(MG)?\s?[+/]{1}\s?\d+[.,]?\d*(MG)?)", value, re.IGNORECASE)
+                if not strength:
+                    strength = re.search(r"(\s\d*[.,]?\d+(\s|MG){1})", value, re.IGNORECASE)
+                if not strength:
+                    strength = re.search(r"OD(\d*[.,]?\d+)", value, re.IGNORECASE)
+
+                if strength:
+                    return clean(strength.group(1))
+                return None
+            except AttributeError:
+                return None
+
+        # add column with product strenght
+        df_po["STRENGTH"] = df_po["DESCRIPTION"].apply(get_strength)
+
         return trim_all_columns(df_po)
 
     @staticmethod
-    def get_parameters(redo, time=None, params=None, orders=None, df=None):
+    def get_parameters(redo, time=None, params=None, orders=None):
         """Get parameters from XFP"""
 
         # if there is df there realy should be no orders or params
         sql_text = ""
-        if df is not None:
-            sql_text = create_sql_snippet("and", ["mancode", "batchid", "parametercode"], df)
-        else:
-            if orders:
-                orders = create_sql_list("and", "mancode", orders)
-                sql_text += orders
-            if params:
-                params = create_sql_list("and", "parametercode", params)
-                sql_text += params
+        # if df is not None:
+        #     sql_text = create_sql_snippet("and", ["mancode", "batchid", "parametercode"], df)
+        # else:
+        if orders:
+            orders = create_sql_list("and", "mancode", orders)
+            sql_text += orders
+        if params:
+            params = create_sql_list("and", "parametercode", params)
+            sql_text += params
 
         if time:
             time = f"""and inputdate >= TO_DATE('{time}',
@@ -121,14 +145,14 @@ class Xfp:
         else:
             time = ""
 
-        def get_string(db, sql_text, time):
+        def get_string(dbname, sql_text, time):
             return f"""select picode as picode, mancode, batchid,
                             parametercode as parametercode, inputindex,
                             inputdate, operationnumber, tagnumber, datatype,
                             numvalue, datevalue,
                             textvalue as textvalue,
                             browsingindex
-                            from {db}.e2s_pidata_man
+                            from {dbname}.e2s_pidata_man
                             where tagnumber <> 0 --filter out output parameters
                             and forced = 0
                             {sql_text}
@@ -136,10 +160,13 @@ class Xfp:
 
         sql_string = get_string("ELAN2406PRD", sql_text, time)
         df_prd = db.xfp_run_sql(sql_string)
+        print(f"Got {df_prd.shape[0]} params frpm XFP prod")
 
         if redo:
+            print("Getting parameters from the XFP Archive DB")
             sql_string = get_string("ARCH2406PRD", sql_text, time)
             df_arch = db.xfp_run_sql(sql_string)
+            print(f"Got {df_arch.shape[0]} params frpm XFP archive")
             df_params = pd.concat([df_prd, df_arch],
                                   ignore_index=True,
                                   sort=False) \
