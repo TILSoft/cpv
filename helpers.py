@@ -47,6 +47,8 @@ def format_params_list(column, df_special=None):
             params = ""
     params = params[:-1]
     list1000.append(params)
+    if list1000[0] == "":
+        return None
     return list1000
 
 def create_sql_list(keyword, prefix, values):
@@ -69,7 +71,7 @@ def trim_all_columns(dataframe):
 
 def get_newest_inputdate(dataframe):
     """Finds the newest date parameter index was created"""
-    return dataframe.loc[:, "INPUTDATE"].max()
+    return dataframe.loc[:, "INPUTDATE"].max().strftime("%Y-%m-%d %H:%M:%S")
 
 def to_date(textdate):
     """Convert string to a date"""

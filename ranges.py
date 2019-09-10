@@ -38,7 +38,10 @@ class Ranges:
         # query xfp db
         params = format_params_list(df_values["value"])
         orders = format_params_list(df_values["MANCODE"])
-        df_values = xfp.get_parameters(redo=redo, params=params, orders=orders)
+        if params and orders:
+            df_values = xfp.get_parameters(redo=redo, params=params, orders=orders)
+        else:
+            return pd.DataFrame() # return empty df
 
         # take only parameters values entered last in the given batchid
         df_values = df_values.loc[df_values.groupby(
@@ -71,6 +74,15 @@ class Ranges:
     def add_ranges(cls, dataframe, arch_db):
         """Append columns with limits and tolerances"""
 
+        # Adding new columns
+        dataframe["value_min"] = None
+        dataframe["value_max"] = None
+        dataframe["tolerance_min"] = None
+        dataframe["tolerance_max"] = None
+
+        if dataframe.empty:
+            return dataframe
+
         # Have to split dataframe due to oracle query limit
         split_size = (dataframe.shape[0] // 1000) + 1
         df_list = np.array_split(dataframe.loc[:, [
@@ -84,13 +96,6 @@ class Ranges:
             df_html_temp = xfp.get_html(sql_text, arch_db)
             df_html = df_html.append(
                 df_html_temp, ignore_index=True, sort=False)
-
-        # Adding new columns
-        dataframe["value_min"] = None
-        dataframe["value_max"] = None
-        dataframe["tolerance_min"] = None
-        dataframe["tolerance_max"] = None
-
         try:
             # Extracting and saving (only numeric datatype)
             for row in dataframe.loc[dataframe["DATATYPE"] == 1].itertuples():
@@ -115,7 +120,9 @@ class Ranges:
             print(row)
             raise
 
-        dataframe = cls.params_to_values(dataframe, arch_db)
+        df_isempty = cls.params_to_values(dataframe, arch_db)
+        if df_isempty.empty:
+            return df_isempty
         return dataframe
 
 

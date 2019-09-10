@@ -13,7 +13,7 @@ __DB = os.environ['DB']
 def excel_upload():
     """Main function"""
 
-    db.truncate_tables(False)
+    db.truncate_tables(True, False)
 
     table = f"{__DB}.dbo.params_main"
     statement = text(f"""INSERT INTO {table} VALUES (:emi_master,

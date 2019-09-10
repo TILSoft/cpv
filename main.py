@@ -30,7 +30,7 @@ wo_list = ""
 if REDO_EVERYTHING:
     USE_ARCH_DB = True
     LAST_EXTRACTION = None
-    db.truncate_tables()
+    db.truncate_tables(True, False)
     excel_upload()
 
 # %%
@@ -198,9 +198,12 @@ df_param_main_values = Ranges.add_ranges(df_param_main_values, USE_ARCH_DB)
 
 # %%
 # Save normal parameters to the database
-df_param_main_values.to_pickle("C:\\IT\\pickles\df_param_main_values.pkl")
+if REDO_EVERYTHING:
+    db.truncate_tables(False, True)
+#df_orders.to_pickle("C:\\IT\\pickles\\df_orders.pkl")
+#df_param_main_values.to_pickle("C:\\IT\\pickles\\df_param_main_values.pkl")
 db.update_params_values(df_param_main_values)
-db.update_process_orders(df_orders.loc[df_orders["PO"].isin(df_param_main_values["MANCODE"])])
+db.update_process_orders(df_orders)
 
 # %%
 # Save special parameters to the database
@@ -213,6 +216,8 @@ if not df_param_special.empty:
 # %%
 # save last extraction date
 db.save_key_value("last_XFP_extraction", EXTRACTION_TIME)
+if REDO_EVERYTHING:
+    db.save_key_value("last_XFP_full_extraction", EXTRACTION_TIME)
 
 # %%
 # Summary
@@ -230,4 +235,5 @@ with open("log.txt", "a+") as text_file:
         file=text_file)
 
 #%%
+
 

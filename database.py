@@ -4,7 +4,7 @@
 import os
 #import codecs
 from sqlalchemy import create_engine
-from sqlalchemy.sql import text, null
+from sqlalchemy.sql import text
 import pandas as pd
 import cx_Oracle
 from helpers import trim_all_columns
@@ -34,10 +34,11 @@ class DataBase:
     @classmethod
     def update(cls, statement, dataframe):
         """Execute Insert or Update SQL statement on the database"""
-        dataframe = dataframe.fillna(value=null())
         dataframe = trim_all_columns(dataframe)
+        dataframe = dataframe.fillna(value="")
         engine = cls.get_engine()
         connection = engine.connect()
+        connection.fast_executemany = False
         with connection.begin() as transaction:
             try:
                 for row in dataframe.itertuples():
@@ -50,7 +51,6 @@ class DataBase:
     def update_params_values(cls, dataframe):
         """Execute Insert or Update SQL statement on the database"""
         table = f"{cls.__DB}.dbo.params_values"
-
         statement = text(f"""MERGE {table} AS target USING
             (SELECT :MANCODE,
                     :family,
@@ -219,11 +219,6 @@ class DataBase:
             connection.outputtypehandler = OutputTypeHandler
             cursor = connection.cursor()
             cursor.execute(query)
-
-            # with codecs.open('testdata\Failed.txt', 'w', "utf-8") as file:
-            #     file.write(query)
-
-
             col_names = [row[0] for row in cursor.description]
             dataframe = pd.DataFrame(cursor.fetchall(), columns=col_names)
         except cx_Oracle.DatabaseError as e:
@@ -235,14 +230,20 @@ class DataBase:
         return trim_all_columns(dataframe)
 
     @classmethod
-    def truncate_tables(cls, values_also=True):
+    def truncate_tables(cls, params, values):
         """When doing full upload delete all rows before insert"""
+        statements_params, statements_values = [], []
         engine = cls.get_engine()
-        statements = [f"TRUNCATE TABLE {cls.__DB}.dbo.params_special",
-                      f"TRUNCATE TABLE {cls.__DB}.dbo.params_main",
-                      f"TRUNCATE TABLE {cls.__DB}.dbo.process_orders"]
-        if values_also:
-            statements.append(f"TRUNCATE TABLE {cls.__DB}.dbo.params_values")
+
+        if params:
+            statements_params = [f"TRUNCATE TABLE {cls.__DB}.dbo.params_special",
+                                 f"TRUNCATE TABLE {cls.__DB}.dbo.params_main"]
+        if values:
+            statements_values = [f"TRUNCATE TABLE {cls.__DB}.dbo.params_values",
+                                 f"TRUNCATE TABLE {cls.__DB}.dbo.process_orders"]
+
+        statements = statements_params + statements_values
+
         connection = engine.connect()
         with connection.begin() as transaction:
             try:

@@ -97,26 +97,34 @@ class Xfp:
         else:
             df_po = df_po_prd.drop_duplicates().reset_index(drop=True)
 
-        def get_strength(value):
-            """Get product strength from the description"""
-            def clean(value):
-                value = re.sub(r"\s+", "", value)
-                value = re.sub(r"(MG|mg|Mg|gM){1}", "", value)
-                value = re.sub(r"(/|//)", "+", value)
-                value = re.sub(",", ".", value)
-                return value
-            try:
-                strength = re.search(r"(\d*[.,]?\d+(MG)?\s?[+/]{1}\s?\d+[.,]?\d*(MG)?)", value, re.IGNORECASE)
-                if not strength:
-                    strength = re.search(r"(\s\d*[.,]?\d+(\s|MG){1})", value, re.IGNORECASE)
-                if not strength:
-                    strength = re.search(r"OD(\d*[.,]?\d+)", value, re.IGNORECASE)
 
-                if strength:
-                    return clean(strength.group(1))
-                return None
-            except AttributeError:
-                return None
+        def get_strength(value):
+                    """Get product strength from the description"""
+                    def clean(value):
+                        value = re.sub(r"\s+", "", value)
+                        value = re.sub(r"(MG|mg|Mg|gM|[A-Za-z]){1}", "", value)
+                        value = re.sub(r"(/|//)", "+", value)
+                        value = re.sub(",", ".", value)
+                        return value
+                    try:
+                        strength = ""
+                        strength = re.search(
+                            r"(\d*[.,]?\d+(MG)?\s?[+/]{1}\s?\d+[.,]?\d*(MG)?)", value, re.IGNORECASE)
+                        if not strength:
+                            strength = re.search(
+                                r"(\s\d*[.,]?\d+(\s|MG){1})", value, re.IGNORECASE)
+                        if not strength:
+                            strength = re.search(
+                                r"((\s|[a-zA-Z])\d*[.,]?\d+(\s|GC){1})", value, re.IGNORECASE)
+                        if not strength:
+                            strength = re.search(
+                                r"OD(\d*[.,]?\d+)", value, re.IGNORECASE)
+
+                        if strength:
+                            return clean(strength.group(1))
+                        return 0
+                    except AttributeError:
+                        return 0
 
         # add column with product strenght
         df_po["STRENGTH"] = df_po["DESCRIPTION"].apply(get_strength)
