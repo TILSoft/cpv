@@ -10,6 +10,7 @@ Pipfile.lock
 tempCodeRunner*
 /testdata/*
 **/instantclient_11_2/
+instantclient_11_2.zip
 **/Untitled*
 **/__pycache__/
 log.txt
