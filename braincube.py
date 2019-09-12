@@ -53,70 +53,49 @@ if EXTRACTION_DATE:
     df_orders = df_orders.loc[df_orders["process_order"].isin(df_params["PO"])]
 
     # get process stages
-    sql = """SELECT * FROM (SELECT
-                            substr(a.numlot,0,8) AS baselot,
-                            substr(a.codeart,0,8) AS trimcodeart,
-                            TO_DATE(a.datetrace || a.heuretrace,'YYYYMMDDHH24MISS') AS mandecdate,
-                            TRIM(CASE
-                                WHEN(instr(a.codeart,'-') ) > 1 THEN TO_CHAR(substr(a.codeart, (instr(a.codeart,'-') + 1),length(a.codeart) ) )
-                                ELSE 'FINI'
-                            END) AS workcentrecode
-                        FROM
-                            elan2406prd.xfp_lotstraces a
-                            INNER JOIN elan2406prd.xfp_articles b ON a.codeart = b.codeart
-                        WHERE
-                            ( ( fonction LIKE 'PRODUCTION LOT'
-                                AND message LIKE 'Manuf%' ) /* OR (FONCTION LIKE 'CONSOMM. AJUSTEMENT')*/ )
-                        UNION
-                        SELECT
-                            substr(a.numlotproduit,0,8) AS baselot,
-                            substr(b.codeart,0,8) AS trimcodeart,
-                            TO_DATE(a.datetrace || a.heuretrace,'YYYYMMDDHH24MISS') AS mandecdate,
-                            'DISP' AS workcentrecode
-                        FROM
-                            elan2406prd.xfp_lotstraces a
-                            INNER JOIN elan2406prd.xfp_lots b ON a.numlotproduit = b.codelot
-                        WHERE
-                            ( fonction LIKE 'CONSOMMATION' )
-                    ) PIVOT (
-                        MIN ( mandecdate )
-                    AS transdate
-                        FOR workcentrecode
-                        IN ( 'DISP', 'G', 'BL', 'T',  'CT', 'P', 'FINI' ))
-                union
-
-                SELECT * FROM (SELECT
-                            substr(a.numlot,0,8) AS baselot,
-                            substr(a.codeart,0,8) AS trimcodeart,
-                            TO_DATE(a.datetrace || a.heuretrace,'YYYYMMDDHH24MISS') AS mandecdate,
-                            TRIM(CASE
-                                WHEN(instr(a.codeart,'-') ) > 1 THEN TO_CHAR(substr(a.codeart, (instr(a.codeart,'-') + 1),length(a.codeart) ) )
-                                ELSE 'FINI'
-                            END) AS workcentrecode
-                        FROM
-                            arch2406prd.xfp_lotstraces a
-                            INNER JOIN arch2406prd.xfp_articles b ON a.codeart = b.codeart
-                        WHERE
-                            ( ( fonction LIKE 'PRODUCTION LOT'
-                                AND message LIKE 'Manuf%' ) /* OR (FONCTION LIKE 'CONSOMM. AJUSTEMENT')*/ )
-                        UNION
-                        SELECT
-                            substr(a.numlotproduit,0,8) AS baselot,
-                            substr(b.codeart,0,8) AS trimcodeart,
-                            TO_DATE(a.datetrace || a.heuretrace,'YYYYMMDDHH24MISS') AS mandecdate,
-                            'DISP' AS workcentrecode
-                        FROM
-                            arch2406prd.xfp_lotstraces a
-                            INNER JOIN arch2406prd.xfp_lots b ON a.numlotproduit = b.codelot
-                        WHERE
-                            ( fonction LIKE 'CONSOMMATION' )
-                    ) PIVOT (
-                        MIN ( mandecdate )
-                    AS transdate
-                        FOR workcentrecode
-                        IN ( 'DISP', 'G', 'BL', 'T',  'CT', 'P', 'FINI' ))"""
+    sql = """SELECT * FROM
+     (SELECT
+             a.numof as process_order,
+             substr(a.numlot,0,8) AS baselot,
+             substr(a.codeart,0,8) AS trimcodeart,
+             TO_DATE(a.datetrace || a.heuretrace,'YYYYMMDDHH24MISS') AS mandecdate,
+             TRIM(CASE
+                 WHEN(instr(a.codeart,'-') ) > 1 THEN TO_CHAR(substr(a.codeart, (instr(a.codeart,'-') + 1),length(a.codeart) ) )
+                 ELSE 'FINI'
+             END) AS workcentrecode
+         FROM
+             elan2406prd.xfp_lotstraces a
+             INNER JOIN elan2406prd.xfp_articles b ON a.codeart = b.codeart
+         WHERE
+             ( ( fonction = 'PRODUCTION LOT'
+                 AND message LIKE 'Manuf%' ) /* OR (FONCTION LIKE 'CONSOMM. AJUSTEMENT')*/ )
+             AND datetrace > '20181001'
+         UNION
+         SELECT
+             a.numof as process_order,
+             substr(a.numlotproduit,0,8) AS baselot,
+             substr(b.codeart,0,8) AS trimcodeart,
+             TO_DATE(a.datetrace || a.heuretrace,'YYYYMMDDHH24MISS') AS mandecdate,
+             'DISP' AS workcentrecode
+         FROM
+             elan2406prd.xfp_lotstraces a
+             INNER JOIN elan2406prd.xfp_lots b ON a.numlotproduit = b.codelot
+         WHERE
+             ( fonction = 'CONSOMMATION' )
+             AND datetrace > '20181001'
+     ) PIVOT (
+         MIN ( mandecdate )
+     AS transdate
+         FOR workcentrecode
+         IN ( 'DISP',
+         'G',
+         'BL',
+         'T',
+         'CT',
+         'P',
+         'FINI' ))"""
     df_stages = db.xfp_run_sql(sql)
-    df_stages = df_stages.loc[df_stages["BASELOT"].isin(df_orders["batch"])]
+    #df_stages = df_stages.loc[df_stages["BASELOT"].isin(df_orders["batch"])]
 
 
     #df_params["value"] = pd.to_numeric(df_params["value"], errors='coerce')

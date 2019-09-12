@@ -171,7 +171,7 @@ class DataBase:
 
     @classmethod
     def save_key_value(cls, key, value):
-        """Update the last extraction time"""
+        """Update the keys"""
 
         statement = text(f"""MERGE {cls.__DB}.dbo.key_values AS target USING
                     (SELECT :key, :value) AS source
