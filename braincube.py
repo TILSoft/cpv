@@ -57,7 +57,7 @@ if EXTRACTION_DATE:
      (SELECT
              a.numof as process_order,
              substr(a.numlot,0,8) AS baselot,
-             substr(a.codeart,0,8) AS trimcodeart,
+             trim(NVL(SUBSTR(a.codeart, 0, INSTR(a.codeart, '-')-1), a.codeart))  AS trimcodeart,
              TO_DATE(a.datetrace || a.heuretrace,'YYYYMMDDHH24MISS') AS mandecdate,
              TRIM(CASE
                  WHEN(instr(a.codeart,'-') ) > 1 THEN TO_CHAR(substr(a.codeart, (instr(a.codeart,'-') + 1),length(a.codeart) ) )
@@ -74,7 +74,7 @@ if EXTRACTION_DATE:
          SELECT
              a.numof as process_order,
              substr(a.numlotproduit,0,8) AS baselot,
-             substr(b.codeart,0,8) AS trimcodeart,
+             trim(NVL(SUBSTR(b.codeart, 0, INSTR(b.codeart, '-')-1), b.codeart))  AS trimcodeart,
              TO_DATE(a.datetrace || a.heuretrace,'YYYYMMDDHH24MISS') AS mandecdate,
              'DISP' AS workcentrecode
          FROM
