@@ -23,6 +23,11 @@ class DataBase:
     __DB_XFP_PORT = os.environ['XFP_DB_PORT']
     __USERNAME_XFP = os.environ['XFP_USERNAME']
     __PASSWORD_XFP = os.environ['XFP_PASSWORD']
+    __DB_LIMS_SID = os.environ['LIMS_DB_SID']
+    __DB_LIMS_IP = os.environ['LIMS_DB_IP']
+    __DB_LIMS_PORT = os.environ['LIMS_DB_PORT']
+    __USERNAME_LIMS = os.environ['LIMS_USERNAME']
+    __PASSWORD_LIMS = os.environ['LIMS_PASSWORD']    
 
     @classmethod
     def get_engine(cls):
@@ -230,6 +235,35 @@ class DataBase:
         return trim_all_columns(dataframe)
 
     @classmethod
+    def lims_run_sql(cls, query):
+        """Runs select and returns dataframe"""
+        # https://stackoverflow.com/questions/49288724/read-and-write-clob-data-using-python-and-cx-oracle
+        def OutputTypeHandler(cursor, name, defaultType, size, precision, scale):
+            if defaultType == cx_Oracle.CLOB:
+                return cursor.var(cx_Oracle.LONG_STRING, arraysize=cursor.arraysize)
+            elif defaultType == cx_Oracle.BLOB:
+                return cursor.var(cx_Oracle.LONG_BINARY, arraysize=cursor.arraysize)
+        try:
+            connection_string = cx_Oracle.makedsn(cls.__DB_LIMS_IP,
+                                                  cls.__DB_LIMS_PORT,
+                                                  cls.__DB_LIMS_SID)
+            connection = cx_Oracle.connect(cls.__USERNAME_LIMS,
+                                           cls.__PASSWORD_LIMS,
+                                        connection_string, encoding="UTF-8", nencoding="UTF-8")
+            connection.outputtypehandler = OutputTypeHandler
+            cursor = connection.cursor()
+            cursor.execute(query)
+            col_names = [row[0] for row in cursor.description]
+            dataframe = pd.DataFrame(cursor.fetchall(), columns=col_names)
+        except cx_Oracle.DatabaseError as e:
+            print(e)
+            print(query)
+            raise
+        finally:
+            connection.close()
+        return trim_all_columns(dataframe)
+
+    @classmethod
     def truncate_tables(cls, params, values):
         """When doing full upload delete all rows before insert"""
         statements_params, statements_values = [], []
@@ -249,6 +283,22 @@ class DataBase:
             try:
                 for statement in statements:
                     connection.execute(statement)
+            except Exception as e:
+                print(e)
+                transaction.rollback()
+
+    @classmethod
+    def delete_erh(cls):
+        """TODO for now delete zero ERH results"""
+
+        statement = """delete from [cpv].[dbo].[params_values]
+                        where parameter = 'ERH' and value = 0"""
+
+        engine = cls.get_engine()
+        connection = engine.connect()
+        with connection.begin() as transaction:
+            try: 
+                connection.execute(statement)
             except Exception as e:
                 print(e)
                 transaction.rollback()

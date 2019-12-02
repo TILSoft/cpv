@@ -1,5 +1,8 @@
 # Things to note
 
+## ENV variables
+C:\Users\sobczakk\AppData\Local\Continuum\miniconda3\envs\DMS_interface\etc\conda\
+
 ## Oracle connection
 
     Files needed for the oracle client for the jupyter image from

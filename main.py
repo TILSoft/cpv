@@ -214,6 +214,11 @@ if not df_param_special.empty:
         df_orders.loc[df_orders["PO"].isin(df_param_special["MANCODE"])])
 
 # %%
+# Only temporary, delete ERH values = 0
+db.delete_erh()
+        
+
+# %%
 # save last extraction date
 db.save_key_value("last_XFP_extraction", EXTRACTION_TIME)
 if REDO_EVERYTHING:

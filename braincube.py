@@ -30,6 +30,46 @@ elif LAST_BC_DUMP < LAST_XFP_EXTRACTION:
 # %%
 # Get all the values
 if EXTRACTION_DATE:
+
+    # get LIMS data
+    sql = f"""SELECT
+            a.name               AS productname,
+            a.version            AS productversion,
+            a.code               AS itemcode,
+            a.x_product_family   AS productfamily,
+            b.recd_date          AS samplerecddate,
+            c.analysis,
+            c.version            AS analysisversion,
+            c.status,
+            c.reported_name      AS testnamegeneral,
+            c.batch              AS runid,
+            d.lot_name           AS lotnumber,
+            substr(d.lot_name,0, 8) as lotnumber_actual,
+            d.x_supplier_lot     AS supplierlot,
+            e.result_number,
+            e.name               AS testnamedetail,
+            e.entry              AS resultvalue,
+            e.units              AS units,
+            g.description        AS specification_description,
+            g.spec_rule,
+            g.max_value,
+            g.min_value,
+            e.status,
+            e.instrument
+        FROM
+            lims.product a
+            INNER JOIN lims.sample b ON a.name = b.product
+                                        AND a.version = b.product_version
+            INNER JOIN lims.test c ON b.sample_number = c.sample_number
+            INNER JOIN lims.lot d ON b.lot = d.lot_number
+            INNER JOIN lims.result e ON c.test_number = e.test_number
+            LEFT OUTER JOIN lims.result_spec f ON f.result_number = e.result_number
+            INNER JOIN lims.product_spec g ON f.product_spec_code = g.entry_code
+            
+        where b.recd_date > to_date('{EXTRACTION_DATE}', 'YYYY-MM-DD HH24:MI:SS')"""
+    df_lims = db.lims_run_sql(sql)
+
+    # get parameters
     sql = f"""SELECT PO
                     ,family
                     ,area
@@ -53,7 +93,7 @@ if EXTRACTION_DATE:
     df_orders = df_orders.loc[df_orders["process_order"].isin(df_params["PO"])]
 
     # get process stages
-    sql = """SELECT * FROM
+    sql = f"""SELECT * FROM
      (SELECT
              a.numof as process_order,
              substr(a.numlot,0,8) AS baselot,
@@ -69,7 +109,7 @@ if EXTRACTION_DATE:
          WHERE
              ( ( fonction = 'PRODUCTION LOT'
                  AND message LIKE 'Manuf%' ) /* OR (FONCTION LIKE 'CONSOMM. AJUSTEMENT')*/ )
-             AND datetrace > '20181001'
+             AND TO_DATE(a.datetrace || a.heuretrace,'YYYYMMDDHH24MISS') > to_date('{EXTRACTION_DATE}', 'YYYY-MM-DD HH24:MI:SS')
          UNION
          SELECT
              a.numof as process_order,
@@ -82,7 +122,7 @@ if EXTRACTION_DATE:
              INNER JOIN elan2406prd.xfp_lots b ON a.numlotproduit = b.codelot
          WHERE
              ( fonction = 'CONSOMMATION' )
-             AND datetrace > '20181001'
+             AND TO_DATE(a.datetrace || a.heuretrace,'YYYYMMDDHH24MISS') > to_date('{EXTRACTION_DATE}', 'YYYY-MM-DD HH24:MI:SS')
      ) PIVOT (
          MIN ( mandecdate )
      AS transdate
@@ -95,27 +135,29 @@ if EXTRACTION_DATE:
          'P',
          'FINI' ))"""
     df_stages = db.xfp_run_sql(sql)
-    #df_stages = df_stages.loc[df_stages["BASELOT"].isin(df_orders["batch"])]
 
-
-    #df_params["value"] = pd.to_numeric(df_params["value"], errors='coerce')
     newest_inputdate = dt.datetime.utcnow().strftime(
         "%Y-%m-%d %H:%M:%S")  # get_newest_inputdate(df_params)
     db.save_key_value("braincube_last_save", newest_inputdate)
     path = PATH + "\\output\\"
-    time_now = dt.datetime.today().strftime("%Y%m%d-%H%M")
-    filename_param = "\\" + "XFP_parameters-" + time_now + ".csv"
-    filename_po = "\\" + "XFP_orders-" + time_now + ".csv"
-    filename_stages = "\\" + "process_stages-" + time_now + ".csv"
-    print(path + filename_param)
-    print(path + filename_po)
-    print(path + filename_stages)
+    time_now = dt.datetime.today().strftime("%Y%m%d-%H%M")   
     if not os.path.exists(path):
-        os.makedirs(path)
-    df_params.to_csv(path + filename_param, sep=';', index=False)
-    df_orders.to_csv(path + filename_po, sep=';', index=False)
-    df_stages.to_csv(path + filename_stages, sep=';', index=False)
-    #df_po.to_csv(path + filename_po, sep=';', index=False)
-
+        os.makedirs(path)    
+    if not df_params.empty:
+        filename_param = "\\" + "XFP_parameters-" + time_now + ".csv"
+        print(path + filename_param)
+        df_params.to_csv(path + filename_param, sep=';', index=False)
+    if not df_orders.empty:
+        filename_po = "\\" + "XFP_orders-" + time_now + ".csv"
+        print(path + filename_po)
+        df_orders.to_csv(path + filename_po, sep=';', index=False)
+    if not df_stages.empty:
+        filename_stages = "\\" + "process_stages-" + time_now + ".csv"
+        print(path + filename_stages)
+        df_stages.to_csv(path + filename_stages, sep=';', index=False)
+    if not df_lims.empty:
+        filename_lims = "\\" + "lims-" + time_now + ".csv"
+        print(path + filename_lims)
+        df_lims.to_csv(path + filename_lims, sep=';', index=False)
 
 # %%
