@@ -191,7 +191,7 @@ CREATE TABLE [dbo].[params_special](
 	[emi_sub] [varchar](8) NOT NULL,
 	[parameter] [varchar](30) NOT NULL,
 	[subemi_name] [varchar](30) NOT NULL,
-	[description] [varchar](45) NOT NULL,
+	[description] [varchar](256) NOT NULL,
 	[groupid] [int] NOT NULL,
 	[area] [varchar](12) NOT NULL,
 	[family] [varchar](30) NOT NULL,
