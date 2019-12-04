@@ -175,6 +175,7 @@ CREATE TABLE [dbo].[process_orders](
 	[material] [varchar](12) NOT NULL,
 	[description] [varchar](256) NOT NULL,
 	[launch_date] [datetime] NOT NULL,
+	[dom] [datetime] NOT NULL,
 	[order_quantity] [decimal](12, 4) NOT NULL,
 	[order_unit] [varchar](2) NOT NULL,
 	[strength] [varchar](16) NULL,

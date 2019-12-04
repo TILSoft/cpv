@@ -116,6 +116,7 @@ class DataBase:
                             :MATERIAL,
                             :DESCRIPTION,
                             :PO_LAUNCHDATE,
+                            :DOM,
                             :ORDER_QTY,
                             :UNIT,
                             :STRENGTH) AS source
@@ -124,6 +125,7 @@ class DataBase:
                             material,
                             description,
                             launch_date,
+                            dom,
                             order_quantity,
                             order_unit,
                             strength)
@@ -134,6 +136,7 @@ class DataBase:
                             target.material = source.material,
                             target.description = source.description,
                             target.launch_date = source.launch_date,
+                            target.dom = source.dom,
                             target.order_quantity = source.order_quantity,
                             target.order_unit = source.order_unit,
                             target.strength = source.strength
@@ -144,6 +147,7 @@ class DataBase:
                             :MATERIAL,
                             :DESCRIPTION,
                             :PO_LAUNCHDATE,
+                            :DOM,
                             :ORDER_QTY,
                             :UNIT,
                             :STRENGTH);""")

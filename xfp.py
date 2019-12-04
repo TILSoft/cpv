@@ -70,6 +70,8 @@ class Xfp:
                         o.numlotpharma as batch,
                         o.designationproduit as description,
                         o.dtdatecreaparsyst as po_launchdate,
+                        (select dtdateanalyse from elan2406prd.xfp_lots
+                            where codelot = o.numlotpharma) as dom,
                         o.codemo as emi_master,
                         o.quantiteof as order_qty,
                         o.uniteof as unit
@@ -84,6 +86,8 @@ class Xfp:
                 o.numlotpharma as batch,
                 o.designationproduit as description,
                 o.dtdatecreaparsyst as po_launchdate,
+                (select dtdateanalyse from elan2406prd.xfp_lots
+                            where codelot = o.numlotpharma) as dom,
                 o.codemo as emi_master,
                 o.quantiteof as order_qty,
                 o.uniteof as unit
@@ -230,7 +234,7 @@ class Xfp:
         if arch_db:
             sql_arch = f"""select mancode, manindex, taskid, batchid, elementid,
             pfccode, title from arch2406prd.e2s_pfc_task_man
-                where status <> 6
+                where status <> 6                
                 {orders}"""
             df_arch = db.xfp_run_sql(sql_arch)
             df_tasks = pd.concat([df_prd, df_arch],

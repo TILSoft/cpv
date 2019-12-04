@@ -121,15 +121,29 @@ if not df_param_special.empty:
 if not df_param_special.empty:
     df_param_special = pd.merge(df_param_special, df_orders,
                                 left_on="MANCODE", right_on="PO")
+
+# %%
+
+
+# %%
+# Merge with parameter list     
+if not df_param_special.empty:                           
     df_param_special = pd.merge(df_param_special, df_param_list_special,
                                 left_on=["EMI_MASTER", "PARENTEMI",
                                          "SUBEMI", "PARAMETERCODE"],
                                 right_on=["emi_master", "emi_parent",
                                           "emi_sub", "parameter"])
     df_param_special.drop(["PO", "emi_master", "emi_parent",
-                           "emi_sub", "parameter", "subemi_name"],
+                           "emi_sub", "parameter"],
                           axis=1, inplace=True)
     del df_param_list_special
+
+# %%
+#Filter out not matching rows based on the subEMI title
+if not df_param_special.empty:
+    df_param_special = df_param_special.loc[df_param_special.apply( \
+        lambda row: row['subemi_name'] in row['SUBEMI_TITLE'], axis=1)]
+
 
 # %%
 # Filter out indexes smaller than max input index
@@ -200,8 +214,6 @@ df_param_main_values = Ranges.add_ranges(df_param_main_values, USE_ARCH_DB)
 # Save normal parameters to the database
 if REDO_EVERYTHING:
     db.truncate_tables(False, True)
-#df_orders.to_pickle("C:\\IT\\pickles\\df_orders.pkl")
-#df_param_main_values.to_pickle("C:\\IT\\pickles\\df_param_main_values.pkl")
 db.update_params_values(df_param_main_values)
 db.update_process_orders(df_orders)
 
@@ -210,13 +222,11 @@ db.update_process_orders(df_orders)
 if not df_param_special.empty:
     df_param_special = df_param_special.replace({pd.np.nan: None})
     db.update_params_values(df_param_special)
-    db.update_process_orders(
-        df_orders.loc[df_orders["PO"].isin(df_param_special["MANCODE"])])
+    db.update_process_orders(df_orders.loc[df_orders["PO"].isin(df_param_special["MANCODE"])])
 
 # %%
 # Only temporary, delete ERH values = 0
-db.delete_erh()
-        
+db.delete_erh()        
 
 # %%
 # save last extraction date
