@@ -32,6 +32,7 @@ elif LAST_BC_DUMP < LAST_XFP_EXTRACTION:
 if EXTRACTION_DATE:
 
     # get LIMS data
+    print("LIMS")
     sql = f"""SELECT
             a.name               AS productname,
             a.version            AS productversion,
@@ -70,6 +71,7 @@ if EXTRACTION_DATE:
     df_lims = db.lims_run_sql(sql)
 
     # get parameters
+    print("parameters")
     sql = f"""SELECT PO
                     ,family
                     ,area
@@ -82,6 +84,7 @@ if EXTRACTION_DATE:
     df_params = db.select(sql)
 
     # get process orders
+    print("process orders")
     sql = f"""SELECT process_order
                     ,batch
                     ,material
@@ -93,8 +96,9 @@ if EXTRACTION_DATE:
     df_orders = df_orders.loc[df_orders["process_order"].isin(df_params["PO"])]
 
     # get process stages
-    sql = f"""SELECT * FROM
-     (SELECT
+    print("process stages")
+    sql = """SELECT * FROM
+        (SELECT
              a.numof as process_order,
              substr(a.numlot,0,8) AS baselot,
              trim(NVL(SUBSTR(a.codeart, 0, INSTR(a.codeart, '-')-1), a.codeart))  AS trimcodeart,
@@ -105,24 +109,23 @@ if EXTRACTION_DATE:
              END) AS workcentrecode
          FROM
              elan2406prd.xfp_lotstraces a
-             INNER JOIN elan2406prd.xfp_articles b ON a.codeart = b.codeart
          WHERE
              ( ( fonction = 'PRODUCTION LOT'
                  AND message LIKE 'Manuf%' ) /* OR (FONCTION LIKE 'CONSOMM. AJUSTEMENT')*/ )
-             AND TO_DATE(a.datetrace || a.heuretrace,'YYYYMMDDHH24MISS') > to_date('{EXTRACTION_DATE}', 'YYYY-MM-DD HH24:MI:SS')
+             AND TO_DATE(a.datetrace || a.heuretrace,'YYYYMMDDHH24MISS') > to_date('2019-10-01', 'YYYY-MM-DD')
          UNION
-         SELECT
+        SELECT
              a.numof as process_order,
-             substr(a.numlotproduit,0,8) AS baselot,
-             trim(NVL(SUBSTR(b.codeart, 0, INSTR(b.codeart, '-')-1), b.codeart))  AS trimcodeart,
+             trim(b.numlotpharma) AS baselot,
+             trim(b.codeproduit)  AS trimcodeart,
              TO_DATE(a.datetrace || a.heuretrace,'YYYYMMDDHH24MISS') AS mandecdate,
              'DISP' AS workcentrecode
          FROM
-             elan2406prd.xfp_lotstraces a
-             INNER JOIN elan2406prd.xfp_lots b ON a.numlotproduit = b.codelot
+             elan2406prd.xfp_lotstraces a, ELAN2406PRD.xfp_ofentete b
          WHERE
-             ( fonction = 'CONSOMMATION' )
-             AND TO_DATE(a.datetrace || a.heuretrace,'YYYYMMDDHH24MISS') > to_date('{EXTRACTION_DATE}', 'YYYY-MM-DD HH24:MI:SS')
+            a.numof = b.numof and b.indiceof = 0
+             and fonction = 'CONSOMMATION'
+             AND TO_DATE(a.datetrace || a.heuretrace,'YYYYMMDDHH24MISS') > to_date('2019-10-01', 'YYYY-MM-DD')
      ) PIVOT (
          MIN ( mandecdate )
      AS transdate
@@ -135,7 +138,9 @@ if EXTRACTION_DATE:
          'P',
          'FINI' ))"""
     df_stages = db.xfp_run_sql(sql)
+    df_stages = df_stages.loc[df_stages["PROCESS_ORDER"].isin(df_params["PO"])]
 
+    print("saving data")
     newest_inputdate = dt.datetime.utcnow().strftime(
         "%Y-%m-%d %H:%M:%S")  # get_newest_inputdate(df_params)
     db.save_key_value("braincube_last_save", newest_inputdate)
