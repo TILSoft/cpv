@@ -1,5 +1,4 @@
 """Save parameters formated for braincube"""
-
 # %%
 # Imports
 import os
@@ -12,6 +11,7 @@ from helpers import get_newest_inputdate, to_date
 # Initialization
 PATH = os.environ['PATH_BRAINCUBE']
 DB = os.environ['DB']
+PROCESS_STAGES_START = os.environ['PROCESS_STAGES_START']
 LAST_BC_DUMP = to_date(db.get_key_value("braincube_last_save"))
 LAST_XFP_EXTRACTION = to_date(db.get_key_value("last_XFP_extraction"))
 LAST_XFP_FULL_EXTRACTION = to_date(
@@ -97,7 +97,7 @@ if EXTRACTION_DATE:
 
     # get process stages
     print("process stages")
-    sql = """SELECT * FROM
+    sql = f"""SELECT * FROM
         (SELECT
              a.numof as process_order,
              substr(a.numlot,0,8) AS baselot,
@@ -110,9 +110,9 @@ if EXTRACTION_DATE:
          FROM
              elan2406prd.xfp_lotstraces a
          WHERE
-             ( ( fonction = 'PRODUCTION LOT'
-                 AND message LIKE 'Manuf%' ) /* OR (FONCTION LIKE 'CONSOMM. AJUSTEMENT')*/ )
-             AND TO_DATE(a.datetrace || a.heuretrace,'YYYYMMDDHH24MISS') > to_date('2019-10-01', 'YYYY-MM-DD')
+             fonction = 'PRODUCTION LOT'
+                 AND message LIKE 'Manuf%' 
+             and a.datetrace >= '{PROCESS_STAGES_START}'
          UNION
         SELECT
              a.numof as process_order,
@@ -125,7 +125,7 @@ if EXTRACTION_DATE:
          WHERE
             a.numof = b.numof and b.indiceof = 0
              and fonction = 'CONSOMMATION'
-             AND TO_DATE(a.datetrace || a.heuretrace,'YYYYMMDDHH24MISS') > to_date('2019-10-01', 'YYYY-MM-DD')
+             and a.datetrace >= '{PROCESS_STAGES_START}'
      ) PIVOT (
          MIN ( mandecdate )
      AS transdate
