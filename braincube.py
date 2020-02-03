@@ -145,7 +145,7 @@ if EXTRACTION_DATE:
          'P',
          'FINI' ))"""
     df_stages = db.xfp_run_sql(sql)
-    df_stages = df_stages.loc[df_stages["PROCESS_ORDER"].isin(df_params["PO"])]
+    #df_stages = df_stages.loc[df_stages["PROCESS_ORDER"].isin(df_params["PO"])]
 
     print("saving data")
     newest_inputdate = dt.datetime.utcnow().strftime(
