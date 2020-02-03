@@ -292,11 +292,11 @@ class DataBase:
                 transaction.rollback()
 
     @classmethod
-    def delete_erh(cls):
-        """TODO for now delete zero ERH results"""
+    def delete_zero_values(cls):
+        """Delete zero parameter results"""
 
         statement = """delete from [cpv].[dbo].[params_values]
-                        where parameter = 'ERH' and value = 0"""
+                        where value = '0'"""
 
         engine = cls.get_engine()
         connection = engine.connect()

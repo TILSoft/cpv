@@ -225,8 +225,8 @@ if not df_param_special.empty:
     db.update_process_orders(df_orders.loc[df_orders["PO"].isin(df_param_special["MANCODE"])])
 
 # %%
-# Only temporary, delete ERH values = 0
-db.delete_erh()        
+# delete parameters with values = 0
+db.delete_zero_values()        
 
 # %%
 # save last extraction date
