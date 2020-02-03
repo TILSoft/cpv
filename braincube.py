@@ -112,20 +112,27 @@ if EXTRACTION_DATE:
          WHERE
              fonction = 'PRODUCTION LOT'
                  AND message LIKE 'Manuf%' 
-             and a.datetrace >= '{PROCESS_STAGES_START}'
+             --and a.datetrace >= '{PROCESS_STAGES_START}'
+             and a.datetrace >= '20170101'
+             --and a.numof = '0220982928'
          UNION
         SELECT
              a.numof as process_order,
-             trim(b.numlotpharma) AS baselot,
-             trim(b.codeproduit)  AS trimcodeart,
+             substr(a.numlot,0,8) AS baselot,
+             trim(NVL(SUBSTR(a.codeart, 0, INSTR(a.codeart, '-')-1), a.codeart))  AS trimcodeart,
              TO_DATE(a.datetrace || a.heuretrace,'YYYYMMDDHH24MISS') AS mandecdate,
-             'DISP' AS workcentrecode
+             TRIM(CASE
+                 WHEN(instr(a.codeart,'-') ) > 1 THEN TO_CHAR(substr(a.codeart, (instr(a.codeart,'-') + 1),length(a.codeart) ) )
+                 ELSE 'FINI'
+             END) AS workcentrecode
          FROM
-             elan2406prd.xfp_lotstraces a, ELAN2406PRD.xfp_ofentete b
+             arch2406prd.xfp_lotstraces a
          WHERE
-            a.numof = b.numof and b.indiceof = 0
-             and fonction = 'CONSOMMATION'
-             and a.datetrace >= '{PROCESS_STAGES_START}'
+             fonction = 'PRODUCTION LOT'
+                 AND message LIKE 'Manuf%' 
+             --and a.datetrace >= '{PROCESS_STAGES_START}'
+             and a.datetrace >= '20170101'
+             --and a.numof = '0220982928'
      ) PIVOT (
          MIN ( mandecdate )
      AS transdate
