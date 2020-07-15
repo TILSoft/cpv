@@ -11,9 +11,9 @@ from database import DataBase as db
 # %%
 # Get all the values
 PATH = os.environ['PATH_APR']
-sql = """SELECT v.PO, v.family, v.area, v.parameter, v.value,
-         o.batch, o.material, o.description, o.launch_date
-         FROM cpv.params_values v, cpv.process_orders o
+sql = """SELECT o.batch, v.PO, o.material, o.description,
+		 v.family, v.area, v.parameter, v.value, o.launch_date
+         FROM cpv.dbo.params_values v, cpv.dbo.process_orders o
          where v.po = o.process_order"""
 df_params = db.select(sql)
 df_params["value"] = pd.to_numeric(
