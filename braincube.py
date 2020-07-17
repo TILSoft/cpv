@@ -41,7 +41,7 @@ if EXTRACTION_DATE:
             b.recd_date          AS samplerecddate,
             c.analysis,
             c.version            AS analysisversion,
-            c.status,
+            c.status as test_status,
             c.reported_name      AS testnamegeneral,
             c.batch              AS runid,
             d.lot_name           AS lotnumber,
@@ -55,7 +55,7 @@ if EXTRACTION_DATE:
             g.spec_rule,
             g.max_value,
             g.min_value,
-            e.status,
+            e.status as result_status,
             e.instrument
         FROM
             lims.product a
@@ -66,7 +66,7 @@ if EXTRACTION_DATE:
             INNER JOIN lims.result e ON c.test_number = e.test_number
             LEFT OUTER JOIN lims.result_spec f ON f.result_number = e.result_number
             INNER JOIN lims.product_spec g ON f.product_spec_code = g.entry_code
-            
+
         where b.recd_date > to_date('{EXTRACTION_DATE}', 'YYYY-MM-DD HH24:MI:SS')"""
     df_lims = db.lims_run_sql(sql)
 
@@ -111,7 +111,7 @@ if EXTRACTION_DATE:
              elan2406prd.xfp_lotstraces a
          WHERE
              fonction = 'PRODUCTION LOT'
-                 AND message LIKE 'Manuf%' 
+                 AND message LIKE 'Manuf%'
              --and a.datetrace >= '{PROCESS_STAGES_START}'
              and a.datetrace >= '20170101'
              --and a.numof = '0220982928'
@@ -129,7 +129,7 @@ if EXTRACTION_DATE:
              arch2406prd.xfp_lotstraces a
          WHERE
              fonction = 'PRODUCTION LOT'
-                 AND message LIKE 'Manuf%' 
+                 AND message LIKE 'Manuf%'
              --and a.datetrace >= '{PROCESS_STAGES_START}'
              and a.datetrace >= '20170101'
              --and a.numof = '0220982928'
@@ -152,9 +152,9 @@ if EXTRACTION_DATE:
         "%Y-%m-%d %H:%M:%S")  # get_newest_inputdate(df_params)
     db.save_key_value("braincube_last_save", newest_inputdate)
     path = PATH + "\\output\\"
-    time_now = dt.datetime.today().strftime("%Y%m%d-%H%M")   
+    time_now = dt.datetime.today().strftime("%Y%m%d-%H%M")
     if not os.path.exists(path):
-        os.makedirs(path)    
+        os.makedirs(path)
     if not df_params.empty:
         filename_param = "\\" + "XFP_parameters-" + time_now + ".csv"
         print(path + filename_param)
